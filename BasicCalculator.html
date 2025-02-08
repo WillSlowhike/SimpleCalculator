@@ -12,6 +12,7 @@
             height: 100vh;
             background-color: #f0f0f0;
             margin: 0;
+            position: relative;
         }
 
         .calculator {
@@ -21,11 +22,10 @@
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
             background-color: #f8f9fa;
             text-align: center;
-            transform: scale(1.2);
         }
 
         #display {
-            width: 100%;
+            width: 90%;
             height: 60px;
             font-size: 28px;
             text-align: right;
@@ -58,9 +58,31 @@
         button:active {
             background-color: #bbb;
         }
+
+        /* Home Button Styling */
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .home-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
+    <!-- Home Button Positioned at Top Left -->
+    <button class="home-button" onclick="goHome()">Home</button>
+
     <div class="calculator">
         <input type="text" id="display" disabled />
         <div class="buttons">
@@ -84,6 +106,7 @@
             <button onclick="appendToDisplay('.')">.</button>
         </div>
     </div>
+
     <script>
         function appendToDisplay(value) {
             document.getElementById('display').value += value;
@@ -101,9 +124,9 @@
         function calculateResult() {
             let display = document.getElementById('display');
             try {
-                display.value = eval(display.value); // Evaluates the expression
+                display.value = eval(display.value);
             } catch {
-                display.value = 'Error'; // If an error occurs (e.g., invalid input)
+                display.value = 'Error';
             }
         }
 
@@ -112,15 +135,20 @@
             const key = event.key;
 
             if (!isNaN(key) || "+-*/.".includes(key)) {
-                appendToDisplay(key); // Handle numbers and operators
+                appendToDisplay(key);
             } else if (key === 'Enter') {
-                calculateResult(); // Handle Enter key as '='
+                calculateResult();
             } else if (key === 'Backspace') {
-                deleteLast(); // Handle Backspace key as 'DEL'
+                deleteLast();
             } else if (key === 'Escape') {
-                clearDisplay(); // Handle Escape key as 'C'
+                clearDisplay();
             }
         });
+
+        // Redirect to home page
+        function goHome() {
+            window.location.href = "index.html"; // Change this if needed
+        }
     </script>
 </body>
 </html>

@@ -46,6 +46,29 @@
             background-color: #999;
         }
 
+        button:active {
+            background-color: #bbb;
+        }
+
+        /* Home Button Styling */
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .home-button:hover {
+            background-color: #0056b3;
+        }
+
         .operator {
             background-color: #ff9500;
         }
@@ -68,6 +91,10 @@
     </style>
 </head>
 <body>
+
+        <!-- Home Button Positioned at Top Left -->
+        <button class="home-button" onclick="goHome()">Home</button>
+
     <div class="calculator">
         <input type="text" id="display" readonly>
         <div class="buttons">
@@ -208,6 +235,11 @@
                 clearDisplay();
             }
         });
+
+                // Redirect to home page
+                function goHome() {
+                    window.location.href = "index.html"; // Change this if needed
+                }
     </script>
 </body>
 </html>
