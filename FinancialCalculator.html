@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0f1a14;
+            --surface: #162019;
+            --panel:   #1c2a20;
+            --border:  #2a3d2e;
+            --border2: #3a5040;
+            --gold:    #c9a84c;
+            --gold-lo: rgba(201,168,76,0.10);
+            --text:    #e8ede9;
+            --sub:     #7a9a80;
+            --muted:   #3a5040;
+            --green:   #4ade80;
+            --red:     #f87171;
+            --shadow:  0 24px 64px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 70% 50% at 80% 10%, rgba(201,168,76,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 10% 90%, rgba(74,222,128,0.04) 0%, transparent 60%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Mono', monospace;
+            padding: 40px 20px;
+        }
+
+        /* Home */
+        .home-button {
+            position: fixed; top: 20px; left: 20px;
+            display: flex; align-items: center; gap: 6px;
+            padding: 7px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px; color: var(--sub);
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 5px; cursor: pointer; text-decoration: none;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .home-button:hover { color: var(--text); border-color: var(--border2); }
+        .home-button svg { width: 12px; height: 12px; }
+
+        /* Card */
+        .card {
+            width: 480px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            animation: rise 0.5s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes rise {
+            from { opacity:0; transform: translateY(24px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .card-header {
+            padding: 22px 24px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .header-top {
+            display: flex; align-items: baseline; justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .app-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px; font-weight: 700;
+            color: var(--text); letter-spacing: -0.01em;
+        }
+        .app-title span { color: var(--gold); }
+        .app-sub {
+            font-size: 10px; color: var(--sub);
+            letter-spacing: 0.12em; text-transform: uppercase;
+        }
+
+        /* Tab nav */
+        .tabs {
+            display: flex; gap: 0;
+            overflow-x: auto;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab {
+            padding: 10px 16px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            color: var(--sub); background: transparent;
+            border: none; border-bottom: 2px solid transparent;
+            cursor: pointer; white-space: nowrap;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+        /* Body */
+        .card-body { padding: 24px; }
+
+        /* Panel */
+        .panel { display: none; animation: fadeIn 0.25s ease both; }
+        .panel.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity:0; transform: translateY(6px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        /* Result display */
+        .result-display {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .result-display::before {
+            content: '';
+            position: absolute; top:0; left:0; right:0; height:2px;
+            background: linear-gradient(90deg, var(--gold), transparent);
+        }
+        .result-label { font-size: 10px; color: var(--sub); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+        .result-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px; font-weight: 600;
+            color: var(--gold); letter-spacing: -0.01em;
+        }
+        .result-value.negative { color: var(--red); }
+        .result-sub { font-size: 11px; color: var(--sub); margin-top: 6px; }
+
+        /* Input fields */
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .field-grid.cols-1 { grid-template-columns: 1fr; }
+        .field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label {
+            font-size: 10px; color: var(--sub);
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .field input, .field select {
+            padding: 9px 12px;
+            font-family: 'DM Mono', monospace;
+            font-size: 13px; color: var(--text);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px; outline: none;
+            transition: border-color 0.15s;
+            width: 100%;
+        }
+        .field input:focus, .field select:focus { border-color: var(--gold); }
+        .field select option { background: var(--panel); }
+        .field input::placeholder { color: var(--muted); }
+
+        /* Solve buttons */
+        .solve-grid { display: grid; gap: 8px; margin-bottom: 16px; }
+        .solve-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        .solve-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .solve-grid.cols-5 { grid-template-columns: repeat(5,1fr); }
+
+        .btn-solve {
+            padding: 10px 8px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            color: var(--sub);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-solve:hover { color: var(--gold); border-color: var(--gold); background: var(--gold-lo); }
+        .btn-solve.primary {
+            grid-column: 1/-1;
+            color: var(--bg); background: var(--gold);
+            border-color: var(--gold); font-size: 12px;
+        }
+        .btn-solve.primary:hover { background: #d4b660; }
+
+        /* Amort table */
+        .amort-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; }
+        .amort-table th {
+            text-align: left; padding: 6px 8px;
+            color: var(--sub); font-weight: 500;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            font-size: 9px;
+        }
+        .amort-table td { padding: 7px 8px; color: var(--text); border-bottom: 1px solid var(--border); }
+        .amort-table tr:last-child td { border-bottom: none; }
+        .amort-table .neg { color: var(--red); }
+        .amort-table .pos { color: var(--green); }
+
+        /* Tip split rows */
+        .split-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid var(--border);
+        }
+        .split-row:last-child { border-bottom: none; }
+        .split-label { font-size: 11px; color: var(--sub); }
+        .split-val { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text); }
+        .split-val.gold { color: var(--gold); }
+
+        /* Currency */
+        .currency-display {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 10px; padding: 14px 18px; margin-bottom: 12px;
+        }
+        .currency-flag { font-size: 22px; margin-right: 10px; }
+        .currency-code { font-size: 11px; color: var(--sub); letter-spacing: 0.08em; margin-bottom: 2px; }
+        .currency-amount { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--text); }
+        .currency-swap {
+            width: 100%; padding: 10px;
+            font-family: 'DM Mono', monospace; font-size: 13px;
+            color: var(--sub); background: transparent;
+            border: 1px dashed var(--border); border-radius: 6px;
+            cursor: pointer; margin-bottom: 12px;
+            transition: all 0.15s;
+        }
+        .currency-swap:hover { color: var(--gold); border-color: var(--gold); }
+
+        /* Info note */
+        .note { font-size: 10px; color: var(--sub); margin-top: 12px; line-height: 1.6; padding: 10px 12px; background: var(--panel); border-radius: 6px; border-left: 2px solid var(--gold); }
+
+        /* Divider */
+        .divider { height:1px; background: var(--border); margin: 16px 0; }
+
+        /* Scrollable results */
+        .scroll-box { max-height: 200px; overflow-y: auto; }
+        .scroll-box::-webkit-scrollbar { width: 4px; }
+        .scroll-box::-webkit-scrollbar-track { background: transparent; }
+        .scroll-box::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<a class="home-button" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Home
+</a>
+
+<div class="card">
+    <div class="card-header">
+        <div class="header-top">
+            <span class="app-title">Financial <span>Calc</span></span>
+            <span class="app-sub">Advanced Analyst</span>
+        </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('tvm', this)">TVM</button>
+            <button class="tab" onclick="switchTab('loan', this)">Loan</button>
+            <button class="tab" onclick="switchTab('compound', this)">Compound</button>
+            <button class="tab" onclick="switchTab('tip', this)">Tip Split</button>
+            <button class="tab" onclick="switchTab('currency', this)">Currency</button>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <!-- ── TVM ── -->
+        <div class="panel active" id="panel-tvm">
+            <div class="result-display">
+                <div class="result-label">Result</div>
+                <div class="result-value" id="tvm-result">—</div>
+                <div class="result-sub" id="tvm-result-sub"></div>
+            </div>
+            <div class="field-grid">
+                <div class="field"><label>N — Periods</label><input type="number" id="tvm-n" placeholder="e.g. 360"></div>
+                <div class="field"><label>I/Y — Rate % / Period</label><input type="number" id="tvm-iy" placeholder="e.g. 0.5"></div>
+                <div class="field"><label>PV — Present Value</label><input type="number" id="tvm-pv" placeholder="e.g. -200000"></div>
+                <div class="field"><label>PMT — Payment</label><input type="number" id="tvm-pmt" placeholder="e.g. 0"></div>
+                <div class="field"><label>FV — Future Value</label><input type="number" id="tvm-fv" placeholder="e.g. 0"></div>
+                <div class="field">
+                    <label>Payment Timing</label>
+                    <select id="tvm-bgn">
+                        <option value="0">End (Ordinary)</option>
+                        <option value="1">Begin (Annuity Due)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="note">Leave one field blank — press its button to solve. Sign convention: cash inflows (+), outflows (−).</div>
+            <div class="divider"></div>
+            <div class="solve-grid cols-5">
+                <button class="btn-solve" onclick="solveTVM('n')">CPT N</button>
+                <button class="btn-solve" onclick="solveTVM('iy')">CPT I/Y</button>
+                <button class="btn-solve" onclick="solveTVM('pv')">CPT PV</button>
+                <button class="btn-solve" onclick="solveTVM('pmt')">CPT PMT</button>
+                <button class="btn-solve" onclick="solveTVM('fv')">CPT FV</button>
+            </div>
+        </div>
+
+        <!-- ── LOAN ── -->
+        <div class="panel" id="panel-loan">
+            <div class="result-display">
+                <div class="result-label">Monthly Payment</div>
+                <div class="result-value" id="loan-payment">—</div>
+                <div class="result-sub" id="loan-sub"></div>
+            </div>
+            <div class="field-grid">
+                <div class="field"><label>Loan Amount ($)</label><input type="number" id="loan-amount" placeholder="e.g. 300000"></div>
+                <div class="field"><label>Annual Rate (%)</label><input type="number" id="loan-rate" placeholder="e.g. 6.5"></div>
+                <div class="field"><label>Term (Years)</label><input type="number" id="loan-years" placeholder="e.g. 30"></div>
+                <div class="field">
+                    <label>Loan Type</label>
+                    <select id="loan-type">
+                        <option value="mortgage">Mortgage (Monthly)</option>
+                        <option value="auto">Auto (Monthly)</option>
+                        <option value="personal">Personal (Monthly)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="solve-grid">
+                <button class="btn-solve primary" onclick="calcLoan()">Calculate Payment</button>
+            </div>
+            <div class="divider"></div>
+            <div class="result-label" style="margin-bottom:8px;">Amortization (First 5 Payments)</div>
+            <div class="scroll-box">
+                <table class="amort-table" id="amort-table">
+                    <thead><tr><th>#</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+                    <tbody id="amort-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── COMPOUND ── -->
+        <div class="panel" id="panel-compound">
+            <div class="result-display">
+                <div class="result-label">Future Value</div>
+                <div class="result-value" id="comp-fv">—</div>
+                <div class="result-sub" id="comp-sub"></div>
+            </div>
+            <div class="field-grid">
+                <div class="field"><label>Principal ($)</label><input type="number" id="comp-p" placeholder="e.g. 10000"></div>
+                <div class="field"><label>Annual Rate (%)</label><input type="number" id="comp-r" placeholder="e.g. 7"></div>
+                <div class="field"><label>Years</label><input type="number" id="comp-t" placeholder="e.g. 20"></div>
+                <div class="field">
+                    <label>Compounding</label>
+                    <select id="comp-n">
+                        <option value="1">Annually</option>
+                        <option value="2">Semi-Annually</option>
+                        <option value="4">Quarterly</option>
+                        <option value="12" selected>Monthly</option>
+                        <option value="365">Daily</option>
+                        <option value="0">Continuous</option>
+                    </select>
+                </div>
+                <div class="field"><label>Regular Contribution ($)</label><input type="number" id="comp-contrib" placeholder="e.g. 500 / period"></div>
+                <div class="field">
+                    <label>Contribution Timing</label>
+                    <select id="comp-when">
+                        <option value="end">End of Period</option>
+                        <option value="start">Start of Period</option>
+                    </select>
+                </div>
+            </div>
+            <div class="solve-grid cols-2">
+                <button class="btn-solve" onclick="calcCompound('fv')">Solve FV</button>
+                <button class="btn-solve" onclick="calcCompound('pv')">Solve PV (Disc.)</button>
+                <button class="btn-solve primary" onclick="calcCompound('fv')">Calculate</button>
+            </div>
+        </div>
+
+        <!-- ── TIP ── -->
+        <div class="panel" id="panel-tip">
+            <div class="field-grid cols-3">
+                <div class="field"><label>Bill Total ($)</label><input type="number" id="tip-bill" placeholder="e.g. 85.50" oninput="calcTip()"></div>
+                <div class="field"><label>Tip (%)</label><input type="number" id="tip-pct" placeholder="e.g. 18" value="18" oninput="calcTip()"></div>
+                <div class="field"><label>People</label><input type="number" id="tip-people" placeholder="e.g. 4" value="1" oninput="calcTip()"></div>
+            </div>
+            <!-- Quick tip buttons -->
+            <div class="solve-grid cols-5" style="margin-bottom:16px;">
+                <button class="btn-solve" onclick="setTip(10)">10%</button>
+                <button class="btn-solve" onclick="setTip(15)">15%</button>
+                <button class="btn-solve" onclick="setTip(18)">18%</button>
+                <button class="btn-solve" onclick="setTip(20)">20%</button>
+                <button class="btn-solve" onclick="setTip(25)">25%</button>
+            </div>
+            <div class="split-row">
+                <span class="split-label">Subtotal</span>
+                <span class="split-val" id="tip-subtotal">$0.00</span>
+            </div>
+            <div class="split-row">
+                <span class="split-label">Tip Amount</span>
+                <span class="split-val gold" id="tip-amount">$0.00</span>
+            </div>
+            <div class="split-row">
+                <span class="split-label">Total Bill</span>
+                <span class="split-val" id="tip-total">$0.00</span>
+            </div>
+            <div class="divider"></div>
+            <div class="split-row">
+                <span class="split-label" style="font-size:13px; color:var(--text);">Per Person</span>
+                <span class="split-val gold" style="font-family:'Playfair Display',serif; font-size:26px;" id="tip-per-person">$0.00</span>
+            </div>
+        </div>
+
+        <!-- ── CURRENCY ── -->
+        <div class="panel" id="panel-currency">
+            <div class="field-grid cols-3" style="margin-bottom:12px;">
+                <div class="field">
+                    <label>From</label>
+                    <select id="cur-from" onchange="calcCurrency()">
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Amount</label>
+                    <input type="number" id="cur-amount" placeholder="1000" value="1000" oninput="calcCurrency()">
+                </div>
+                <div class="field">
+                    <label>To</label>
+                    <select id="cur-to" onchange="calcCurrency()">
+                        <option value="EUR">EUR</option>
+                    </select>
+                </div>
+            </div>
+            <div class="currency-display">
+                <div>
+                    <div class="currency-code" id="cur-from-label">USD</div>
+                    <div class="currency-amount" id="cur-from-display">1,000.00</div>
+                </div>
+                <div style="color:var(--gold); font-size:20px;">→</div>
+                <div style="text-align:right;">
+                    <div class="currency-code" id="cur-to-label">EUR</div>
+                    <div class="currency-amount" id="cur-to-display">—</div>
+                </div>
+            </div>
+            <button class="currency-swap" onclick="swapCurrency()">⇄ Swap currencies</button>
+            <div class="split-row">
+                <span class="split-label">Exchange Rate</span>
+                <span class="split-val" id="cur-rate" style="font-size:13px;">—</span>
+            </div>
+            <div class="note" id="cur-note">Rates are approximate reference values. Use a live source for transactions.</div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const fmt = (n, d=2) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtUSD = n => '$' + fmt(Math.abs(n));
+
+function setResult(elId, val, subId, sub) {
+    const el = document.getElementById(elId);
+    el.textContent = val;
+    el.className = 'result-value' + (typeof val === 'string' && val.startsWith('-') ? ' negative' : '');
+    if (subId) document.getElementById(subId).textContent = sub || '';
+}
+
+// ── TVM ───────────────────────────────────────────────────────────────────────
+function getTV(id) {
+    const v = document.getElementById('tvm-' + id).value;
+    return v === '' ? null : parseFloat(v);
+}
+
+function solveTVM(solve) {
+    const bgn = parseInt(document.getElementById('tvm-bgn').value);
+    let n   = getTV('n');
+    let iy  = getTV('iy');
+    let pv  = getTV('pv');
+    let pmt = getTV('pmt');
+    let fv  = getTV('fv');
+
+    // Each solve needs 4 known values
+    try {
+        if (solve === 'fv') {
+            if (n==null||iy==null||pv==null||pmt==null) { setResult('tvm-result','Need N, I/Y, PV, PMT','tvm-result-sub',''); return; }
+            const r = iy / 100;
+            if (r === 0) { fv = -(pv + pmt * n); }
+            else {
+                const factor = Math.pow(1+r, n);
+                fv = -(pv * factor + pmt * (1 + r * bgn) * (factor - 1) / r);
+            }
+            document.getElementById('tvm-fv').value = fmt(fv);
+            setResult('tvm-result', (fv >= 0 ? '' : '-') + fmtUSD(fv), 'tvm-result-sub', 'Future Value');
+        } else if (solve === 'pv') {
+            if (n==null||iy==null||pmt==null||fv==null) { setResult('tvm-result','Need N, I/Y, PMT, FV','tvm-result-sub',''); return; }
+            const r = iy / 100;
+            if (r === 0) { pv = -(fv + pmt * n); }
+            else {
+                const factor = Math.pow(1+r, n);
+                pv = -(fv / factor + pmt * (1 + r * bgn) * (factor - 1) / (r * factor));
+            }
+            document.getElementById('tvm-pv').value = fmt(pv);
+            setResult('tvm-result', (pv >= 0 ? '' : '-') + fmtUSD(pv), 'tvm-result-sub', 'Present Value');
+        } else if (solve === 'pmt') {
+            if (n==null||iy==null||pv==null||fv==null) { setResult('tvm-result','Need N, I/Y, PV, FV','tvm-result-sub',''); return; }
+            const r = iy / 100;
+            if (r === 0) { pmt = -(pv + fv) / n; }
+            else {
+                const factor = Math.pow(1+r, n);
+                pmt = -(pv * factor + fv) * r / ((factor - 1) * (1 + r * bgn));
+            }
+            document.getElementById('tvm-pmt').value = fmt(pmt);
+            setResult('tvm-result', (pmt >= 0 ? '' : '-') + fmtUSD(pmt), 'tvm-result-sub', 'Payment per Period');
+        } else if (solve === 'n') {
+            if (iy==null||pv==null||pmt==null||fv==null) { setResult('tvm-result','Need I/Y, PV, PMT, FV','tvm-result-sub',''); return; }
+            const r = iy / 100;
+            if (r === 0) { n = -(pv + fv) / pmt; }
+            else {
+                const num = Math.log((pmt * (1 + r * bgn) / r - fv) / (pv + pmt * (1 + r * bgn) / r));
+                const den = Math.log(1 + r);
+                n = num / den;
+            }
+            document.getElementById('tvm-n').value = fmt(n, 4);
+            setResult('tvm-result', fmt(n, 4), 'tvm-result-sub', 'Number of Periods');
+        } else if (solve === 'iy') {
+            if (n==null||pv==null||pmt==null||fv==null) { setResult('tvm-result','Need N, PV, PMT, FV','tvm-result-sub',''); return; }
+            // Newton-Raphson
+            let r = 0.05 / 12;
+            for (let i = 0; i < 200; i++) {
+                const f1 = Math.pow(1+r, n);
+                const f  = pv * f1 + pmt * (1 + r * bgn) * (f1-1)/r + fv;
+                const df = n * pv * Math.pow(1+r,n-1)
+                         + pmt * bgn * (f1-1)/r
+                         + pmt * (1+r*bgn) * (n * Math.pow(1+r,n-1)*r - (f1-1)) / (r*r);
+                const rn = r - f/df;
+                if (Math.abs(rn - r) < 1e-10) { r = rn; break; }
+                r = rn;
+            }
+            const iyResult = r * 100;
+            document.getElementById('tvm-iy').value = fmt(iyResult, 6);
+            setResult('tvm-result', fmt(iyResult, 4) + '%', 'tvm-result-sub', 'Interest Rate per Period');
+        }
+    } catch(e) {
+        setResult('tvm-result', 'Error', 'tvm-result-sub', 'Check your inputs');
+    }
+}
+
+// ── LOAN ─────────────────────────────────────────────────────────────────────
+function calcLoan() {
+    const P = parseFloat(document.getElementById('loan-amount').value);
+    const annualRate = parseFloat(document.getElementById('loan-rate').value);
+    const years = parseFloat(document.getElementById('loan-years').value);
+    if (!P || !annualRate || !years) return;
+
+    const r = annualRate / 100 / 12;
+    const n = years * 12;
+    const pmt = r === 0 ? P / n : P * r * Math.pow(1+r,n) / (Math.pow(1+r,n) - 1);
+
+    const totalPaid = pmt * n;
+    const totalInterest = totalPaid - P;
+
+    document.getElementById('loan-payment').textContent = fmtUSD(pmt);
+    document.getElementById('loan-sub').textContent =
+        `Total paid: ${fmtUSD(totalPaid)}  |  Total interest: ${fmtUSD(totalInterest)}`;
+
+    // Amortization table (first 5 + last period)
+    const tbody = document.getElementById('amort-body');
+    tbody.innerHTML = '';
+    let balance = P;
+    const rows = Math.min(n, 5);
+    for (let i = 1; i <= rows; i++) {
+        const interest = balance * r;
+        const principal = pmt - interest;
+        balance -= principal;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i}</td>
+            <td>${fmtUSD(pmt)}</td>
+            <td class="pos">${fmtUSD(principal)}</td>
+            <td class="neg">-${fmtUSD(interest)}</td>
+            <td>${fmtUSD(Math.max(0, balance))}</td>`;
+        tbody.appendChild(tr);
+    }
+    if (n > 5) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="5" style="color:var(--sub); font-size:10px; text-align:center; padding:8px;">
+            … ${n - 5} more payments …</td>`;
+        tbody.appendChild(tr);
+    }
+}
+
+// ── COMPOUND ──────────────────────────────────────────────────────────────────
+function calcCompound(mode) {
+    const P     = parseFloat(document.getElementById('comp-p').value) || 0;
+    const r     = parseFloat(document.getElementById('comp-r').value) / 100 || 0;
+    const t     = parseFloat(document.getElementById('comp-t').value) || 0;
+    const nStr  = document.getElementById('comp-n').value;
+    const contrib = parseFloat(document.getElementById('comp-contrib').value) || 0;
+    const when  = document.getElementById('comp-when').value;
+
+    let FV, interest;
+    const n = parseInt(nStr);
+
+    if (mode === 'fv') {
+        if (nStr === '0') {
+            // Continuous
+            FV = P * Math.exp(r * t);
+            if (contrib > 0) {
+                FV += contrib * (Math.exp(r * t) - 1) / r; // approx annual contrib
+            }
+        } else {
+            const periods = n * t;
+            const rp = r / n;
+            FV = P * Math.pow(1 + rp, periods);
+            if (contrib > 0) {
+                const bgn = when === 'start' ? 1 : 0;
+                FV += contrib * (1 + rp * bgn) * (Math.pow(1+rp, periods) - 1) / rp;
+            }
+        }
+        interest = FV - P - contrib * (nStr === '0' ? t : n * t);
+        document.getElementById('comp-fv').textContent = fmtUSD(FV);
+        document.getElementById('comp-sub').textContent =
+            `Principal: ${fmtUSD(P)}  |  Interest earned: ${fmtUSD(Math.max(0,interest))}`;
+    } else {
+        // Solve PV (discount FV)
+        const fvTarget = parseFloat(document.getElementById('comp-p').value);
+        if (!fvTarget || !r || !t) return;
+        const nComp = nStr === '0' ? null : parseInt(nStr);
+        let PV;
+        if (!nComp) PV = fvTarget * Math.exp(-r * t);
+        else PV = fvTarget / Math.pow(1 + r/nComp, nComp * t);
+        document.getElementById('comp-fv').textContent = fmtUSD(PV);
+        document.getElementById('comp-sub').textContent = 'Present Value (Discounted)';
+    }
+}
+
+// ── TIP ───────────────────────────────────────────────────────────────────────
+function calcTip() {
+    const bill   = parseFloat(document.getElementById('tip-bill').value) || 0;
+    const pct    = parseFloat(document.getElementById('tip-pct').value)  || 0;
+    const people = parseInt(document.getElementById('tip-people').value) || 1;
+    const tip    = bill * pct / 100;
+    const total  = bill + tip;
+    const per    = total / people;
+    document.getElementById('tip-subtotal').textContent  = fmtUSD(bill);
+    document.getElementById('tip-amount').textContent    = fmtUSD(tip);
+    document.getElementById('tip-total').textContent     = fmtUSD(total);
+    document.getElementById('tip-per-person').textContent = fmtUSD(per);
+}
+
+function setTip(pct) {
+    document.getElementById('tip-pct').value = pct;
+    calcTip();
+}
+
+// ── CURRENCY ──────────────────────────────────────────────────────────────────
+const SYMBOLS = { USD:'$',EUR:'€',GBP:'£',JPY:'¥',CAD:'CA$',AUD:'A$',CHF:'Fr',CNY:'¥',INR:'₹',MXN:'$',KRW:'₩',SGD:'S$' };
+
+// Live rates fetched from Frankfurter (ECB data, updated daily, no key needed)
+let liveRates = null;   // rates relative to EUR base
+let ratesDate = '';
+let fetchingRates = false;
+
+async function fetchRates() {
+    if (fetchingRates) return;
+    fetchingRates = true;
+    setCurStatus('Fetching live rates…', false);
+    try {
+        const res  = await fetch('https://api.frankfurter.app/latest?from=EUR');
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+        liveRates  = { EUR: 1, ...data.rates };
+        ratesDate  = data.date;
+        populateCurrencyDropdowns(Object.keys(liveRates).sort(), 'USD', 'EUR');
+        setCurStatus(`Live rates · ECB · ${ratesDate}`, true);
+        calcCurrency();
+    } catch (e) {
+        setCurStatus('Could not load live rates — using reference values', false);
+        liveRates = {
+            AED:3.385, AUD:1.418, BGN:1.956, BRL:5.21,
+            CAD:1.245, CHF:0.824, CNY:6.69,  CZK:25.1,
+            DKK:7.46,  EUR:1,     GBP:0.787, HKD:7.19,
+            HUF:395,   IDR:14950, ILS:3.41,  INR:76.8,
+            ISK:149,   JPY:138.5, KRW:1243,  MXN:17.7,
+            MYR:4.11,  NOK:10.55, NZD:1.54,  PHP:51.8,
+            PLN:4.27,  RON:4.97,  SEK:11.35, SGD:1.237,
+            THB:32.1,  TRY:29.8,  TWD:29.5,  USD:0.922,
+            ZAR:17.2
+        };
+        populateCurrencyDropdowns(Object.keys(liveRates).sort(), 'USD', 'EUR');
+        calcCurrency();
+    }
+    fetchingRates = false;
+}
+
+const FLAGS = {
+    AED:'🇦🇪', AUD:'🇦🇺', BGN:'🇧🇬', BRL:'🇧🇷', CAD:'🇨🇦',
+    CHF:'🇨🇭', CNY:'🇨🇳', CZK:'🇨🇿', DKK:'🇩🇰', EUR:'🇪🇺',
+    GBP:'🇬🇧', HKD:'🇭🇰', HUF:'🇭🇺', IDR:'🇮🇩', ILS:'🇮🇱',
+    INR:'🇮🇳', ISK:'🇮🇸', JPY:'🇯🇵', KRW:'🇰🇷', MXN:'🇲🇽',
+    MYR:'🇲🇾', NOK:'🇳🇴', NZD:'🇳🇿', PHP:'🇵🇭', PLN:'🇵🇱',
+    RON:'🇷🇴', SEK:'🇸🇪', SGD:'🇸🇬', THB:'🇹🇭', TRY:'🇹🇷',
+    TWD:'🇹🇼', USD:'🇺🇸', ZAR:'🇿🇦'
+};
+
+function populateCurrencyDropdowns(currencies, defaultFrom, defaultTo) {
+    const fromSel = document.getElementById('cur-from');
+    const toSel   = document.getElementById('cur-to');
+    [fromSel, toSel].forEach((sel, i) => {
+        const current = sel.value || (i === 0 ? defaultFrom : defaultTo);
+        sel.innerHTML = '';
+        currencies.forEach(code => {
+            const opt = document.createElement('option');
+            opt.value = code;
+            opt.textContent = (FLAGS[code] ? FLAGS[code] + ' ' : '') + code;
+            if (code === current) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        if (!sel.value) sel.value = i === 0 ? defaultFrom : defaultTo;
+    });
+}
+
+function setCurStatus(msg, live) {
+    const el = document.getElementById('cur-note');
+    el.textContent = msg;
+    el.style.borderLeftColor = live ? 'var(--green)' : 'var(--gold)';
+}
+
+function calcCurrency() {
+    if (!liveRates) return;
+    const from   = document.getElementById('cur-from').value;
+    const to     = document.getElementById('cur-to').value;
+    const amount = parseFloat(document.getElementById('cur-amount').value) || 0;
+
+    // Convert via EUR base: from → EUR → to
+    const amountEUR = amount / liveRates[from];
+    const converted = amountEUR * liveRates[to];
+    const rate      = liveRates[to] / liveRates[from];
+
+    document.getElementById('cur-from-label').textContent   = from;
+    document.getElementById('cur-to-label').textContent     = to;
+    document.getElementById('cur-from-display').textContent = SYMBOLS[from] + fmt(amount);
+    document.getElementById('cur-to-display').textContent   = SYMBOLS[to]   + fmt(converted);
+    document.getElementById('cur-rate').textContent         = `1 ${from} = ${fmt(rate, 4)} ${to}`;
+}
+
+function swapCurrency() {
+    const f = document.getElementById('cur-from');
+    const t = document.getElementById('cur-to');
+    [f.value, t.value] = [t.value, f.value];
+    calcCurrency();
+}
+
+// Init
+calcTip();
+fetchRates();
+</script>
+    <footer style="
+        position: fixed; bottom: 0; left: 0; right: 0;
+        text-align: center; padding: 10px;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px; letter-spacing: 0.12em;
+        color: #3a3a48;
+        z-index: 5; pointer-events: none;
+    ">© 2026 WillSlowhike · All Rights Reserved</footer>
+</body>
+</body>
+</html>

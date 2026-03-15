@@ -4,152 +4,359 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scientific Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg:        #0d0d0f;
+            --surface:   #141418;
+            --panel:     #1c1c22;
+            --border:    #2a2a34;
+            --muted:     #3a3a48;
+            --text:      #eeeef2;
+            --subtext:   #888899;
+            --accent:    #6c63ff;
+            --orange:    #ff7043;
+            --red:       #ff4d6d;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            background-image:
+                radial-gradient(ellipse 60% 50% at 20% 20%, rgba(108,99,255,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 80% 80%, rgba(0,229,160,0.05) 0%, transparent 60%);
+        }
+
+        .home-button {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--subtext);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+            text-decoration: none;
+        }
+        .home-button:hover { color: var(--text); border-color: var(--muted); }
+        .home-button svg { width: 14px; height: 14px; }
+
         .calculator {
-            width: 400px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #333;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.03),
+                0 32px 64px rgba(0,0,0,0.6),
+                0 8px 16px rgba(0,0,0,0.4);
+            animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        #display {
-            width: 95%;
-            height: 60px;
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .calc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
-            padding: 10px;
-            font-size: 24px;
-            text-align: right;
-            background-color: #fff;
-            border: none;
-            border-radius: 5px;
+        }
+        .calc-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--subtext);
+        }
+        .mode-badge {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: rgba(108,99,255,0.12);
+            border: 1px solid rgba(108,99,255,0.25);
+            padding: 3px 10px;
+            border-radius: 99px;
         }
 
-        .buttons {
+        .display-wrap {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .display-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(108,99,255,0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .display-expression {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: var(--subtext);
+            min-height: 18px;
+            margin-bottom: 6px;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #display {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'DM Mono', monospace;
+            font-size: 32px;
+            font-weight: 400;
+            color: var(--text);
+            text-align: right;
+            caret-color: var(--accent);
+            letter-spacing: -0.01em;
+        }
+        #display::placeholder { color: var(--muted); }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--subtext);
+            margin-bottom: 10px;
+            padding-left: 2px;
+        }
+
+        .buttons-sci {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .buttons-main {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 14px 0;
         }
 
         button {
-            padding: 15px;
+            height: 48px;
+            font-family: 'DM Mono', monospace;
+            font-size: 15px;
+            font-weight: 400;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            background: var(--panel);
+            color: var(--subtext);
+            transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.08s;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.01em;
+        }
+        button:hover { background: var(--muted); color: var(--text); border-color: var(--muted); }
+        button:active { transform: scale(0.94); }
+
+        button.function {
+            font-size: 13px;
+            color: #a0a0c0;
+            background: rgba(108,99,255,0.06);
+            border-color: rgba(108,99,255,0.2);
+        }
+        button.function:hover {
+            background: rgba(108,99,255,0.18);
+            color: var(--text);
+            border-color: rgba(108,99,255,0.4);
+        }
+
+        button.digit { color: var(--text); background: var(--panel); font-size: 17px; }
+        button.digit:hover { background: var(--muted); }
+
+        button.operator {
+            color: var(--orange);
+            background: rgba(255,112,67,0.06);
+            border-color: rgba(255,112,67,0.2);
+            font-size: 17px;
+        }
+        button.operator:hover {
+            background: rgba(255,112,67,0.18);
+            border-color: rgba(255,112,67,0.4);
+            color: #ffaa88;
+        }
+
+        button.equals {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
             font-size: 18px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            background-color: #666;
-            color: white;
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            grid-row: span 2;
+            height: auto;
         }
+        button.equals:hover { background: #7c75ff; border-color: #7c75ff; }
 
-        button:hover {
-            background-color: #999;
+        button.clear {
+            background: rgba(255,77,109,0.1);
+            border-color: rgba(255,77,109,0.25);
+            color: var(--red);
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.04em;
         }
+        button.clear:hover { background: rgba(255,77,109,0.22); border-color: rgba(255,77,109,0.5); }
 
-        button:active {
-            background-color: #bbb;
-        }
+        button.backspace { color: var(--subtext); font-size: 18px; }
+        button.backspace:hover { color: var(--text); }
 
-        /* Home Button Styling */
-        .home-button {
+        button.zero { grid-column: span 2; }
+
+        button::after {
+            content: '';
             position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 10px 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.2s;
         }
-
-        .home-button:hover {
-            background-color: #0056b3;
-        }
-
-        .operator {
-            background-color: #ff9500;
-        }
-
-        .function {
-            background-color: #4a4a4a;
-        }
-
-        .equals {
-            background-color: #007AFF;
-        }
-
-        .clear {
-            background-color: #ff3b30;
-        }
-
-        .backspace {
-            background-color: #4a4a4a;
-        }
+        button:active::after { opacity: 1; }
     </style>
 </head>
 <body>
 
-        <!-- Home Button Positioned at Top Left -->
-        <button class="home-button" onclick="goHome()">Home</button>
+    <a class="home-button" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Home
+    </a>
 
     <div class="calculator">
-        <input type="text" id="display" readonly>
-        <div class="buttons">
-            <!-- Scientific Functions -->
+
+        <div class="calc-header">
+            <span class="calc-title">Calculator</span>
+            <span class="mode-badge">Scientific</span>
+        </div>
+
+        <div class="display-wrap">
+            <div class="display-expression" id="expression">—</div>
+            <input type="text" id="display" placeholder="0" readonly>
+        </div>
+
+        <div class="section-label">Functions</div>
+        <div class="buttons-sci">
             <button class="function" onclick="appendToDisplay('sin(')">sin</button>
             <button class="function" onclick="appendToDisplay('cos(')">cos</button>
             <button class="function" onclick="appendToDisplay('tan(')">tan</button>
             <button class="function" onclick="appendToDisplay('log(')">log</button>
             <button class="function" onclick="appendToDisplay('ln(')">ln</button>
             <button class="function" onclick="appendToDisplay('sqrt(')">√</button>
-            <button class="function" onclick="appendToDisplay('^')">x^y</button>
-            <button class="function" onclick="appendToDisplay('fact(')">n!</button>
+            <button class="function" onclick="appendToDisplay('^')">xʸ</button>
+            <button class="function" onclick="appendToDisplay('**2')">x²</button>
             <button class="function" onclick="appendToDisplay('π')">π</button>
             <button class="function" onclick="appendToDisplay('e')">e</button>
-            
-            <!-- Numbers and Basic Operations -->
-            <button onclick="appendToDisplay('7')">7</button>
-            <button onclick="appendToDisplay('8')">8</button>
-            <button onclick="appendToDisplay('9')">9</button>
-            <button class="operator" onclick="appendToDisplay('/')">/</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="buttons-main">
+            <!-- Row 1 -->
+            <button class="clear" onclick="clearDisplay()">AC</button>
+            <button class="backspace" onclick="backspace()">⌫</button>
             <button class="operator" onclick="appendToDisplay('(')">(</button>
-            
-            <button onclick="appendToDisplay('4')">4</button>
-            <button onclick="appendToDisplay('5')">5</button>
-            <button onclick="appendToDisplay('6')">6</button>
-            <button class="operator" onclick="appendToDisplay('*')">×</button>
             <button class="operator" onclick="appendToDisplay(')')">)</button>
-            
-            <button onclick="appendToDisplay('1')">1</button>
-            <button onclick="appendToDisplay('2')">2</button>
-            <button onclick="appendToDisplay('3')">3</button>
-            <button class="operator" onclick="appendToDisplay('-')">-</button>
+            <button class="operator" onclick="appendToDisplay('/')">÷</button>
+
+            <!-- Row 2 -->
+            <button class="digit" onclick="appendToDisplay('7')">7</button>
+            <button class="digit" onclick="appendToDisplay('8')">8</button>
+            <button class="digit" onclick="appendToDisplay('9')">9</button>
+            <button class="operator" onclick="appendToDisplay('*')">×</button>
             <button class="function" onclick="appendToDisplay('%')">%</button>
-            
-            <button onclick="appendToDisplay('0')">0</button>
-            <button onclick="appendToDisplay('.')">.</button>
-            <button class="clear" onclick="clearDisplay()">C</button>
-            <button class="operator" onclick="appendToDisplay('+')">+</button>
+
+            <!-- Row 3 -->
+            <button class="digit" onclick="appendToDisplay('4')">4</button>
+            <button class="digit" onclick="appendToDisplay('5')">5</button>
+            <button class="digit" onclick="appendToDisplay('6')">6</button>
+            <button class="operator" onclick="appendToDisplay('-')">−</button>
             <button class="equals" onclick="calculate()">=</button>
-            <button class="backspace" onclick="backspace()">←</button>
+
+            <!-- Row 4 -->
+            <button class="digit" onclick="appendToDisplay('1')">1</button>
+            <button class="digit" onclick="appendToDisplay('2')">2</button>
+            <button class="digit" onclick="appendToDisplay('3')">3</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+
+            <!-- Row 5 -->
+            <button class="digit zero" onclick="appendToDisplay('0')">0</button>
+            <button class="digit" onclick="appendToDisplay('.')">.</button>
+            <button class="operator" onclick="toggleSign()">±</button>
         </div>
     </div>
 
     <script>
         function appendToDisplay(value) {
-            document.getElementById('display').value += value;
+            const display = document.getElementById('display');
+            display.value += value;
+            updateExpression();
         }
 
         function clearDisplay() {
             document.getElementById('display').value = '';
+            document.getElementById('expression').textContent = '—';
         }
 
         function backspace() {
-            let display = document.getElementById('display');
+            const display = document.getElementById('display');
             display.value = display.value.slice(0, -1);
+            updateExpression();
+        }
+
+        function toggleSign() {
+            const display = document.getElementById('display');
+            if (!display.value || display.value === '0') return;
+            display.value = display.value.startsWith('-')
+                ? display.value.slice(1)
+                : '-' + display.value;
+        }
+
+        function updateExpression() {
+            const expr = document.getElementById('display').value;
+            document.getElementById('expression').textContent = expr || '—';
         }
 
         function factorial(n) {
@@ -159,12 +366,13 @@
         }
 
         function calculate() {
+            const display = document.getElementById('display');
+            const raw = display.value;
+            if (!raw) return;
             try {
-                let expression = document.getElementById('display').value;
-                
-                // Replace mathematical constants and functions
+                let expression = raw;
                 expression = expression.replace(/π/g, Math.PI);
-                expression = expression.replace(/e/g, Math.E);
+                expression = expression.replace(/(?<![a-zA-Z])e(?![a-zA-Z])/g, Math.E);
                 expression = expression.replace(/sin\(/g, 'Math.sin(');
                 expression = expression.replace(/cos\(/g, 'Math.cos(');
                 expression = expression.replace(/tan\(/g, 'Math.tan(');
@@ -174,72 +382,41 @@
                 expression = expression.replace(/\^/g, '**');
                 expression = expression.replace(/fact\(/g, 'factorial(');
                 expression = expression.replace(/%/g, '/100');
-                
-                // Evaluate the expression
-                let result = eval(expression);
-                document.getElementById('display').value = result;
-            } catch (error) {
-                document.getElementById('display').value = 'Error';
+
+                const result = eval(expression);
+                document.getElementById('expression').textContent = raw + ' =';
+                display.value = parseFloat(result.toPrecision(12)).toString();
+            } catch (e) {
+                document.getElementById('expression').textContent = 'Syntax error';
+                display.value = '';
             }
         }
 
-        // Keyboard support
-        document.addEventListener('keydown', function(event) {
-            const key = event.key;
-
-            // Numbers and basic operators
-            if (/[0-9+\-*/.%()]/.test(key)) {
-                appendToDisplay(key);
-            }
-
-            // Scientific functions and constants
+        document.addEventListener('keydown', function(e) {
+            const key = e.key;
+            if (/^[0-9+\-*/.%()]$/.test(key)) { appendToDisplay(key); return; }
             switch (key) {
-                case 's':
-                    appendToDisplay('sin(');
-                    break;
-                case 'c':
-                    appendToDisplay('cos(');
-                    break;
-                case 't':
-                    appendToDisplay('tan(');
-                    break;
-                case 'l':
-                    appendToDisplay('log(');
-                    break;
-                case 'n':
-                    appendToDisplay('ln(');
-                    break;
-                case 'q':
-                    appendToDisplay('sqrt(');
-                    break;
-                case '^':
-                    appendToDisplay('^');
-                    break;
-                case '!':
-                    appendToDisplay('fact(');
-                    break;
-                case 'p':
-                    appendToDisplay('π');
-                    break;
-                case 'E':
-                    appendToDisplay('e');
-                    break;
-            }
-
-            // Special keys
-            if (key === 'Enter' || key === '=') {
-                calculate();
-            } else if (key === 'Backspace') {
-                backspace();
-            } else if (key === 'Escape') {
-                clearDisplay();
+                case 'Enter': case '=': calculate(); break;
+                case 'Backspace': backspace(); break;
+                case 'Escape': clearDisplay(); break;
+                case 's': appendToDisplay('sin('); break;
+                case 'c': appendToDisplay('cos('); break;
+                case 't': appendToDisplay('tan('); break;
+                case 'l': appendToDisplay('log('); break;
+                case 'n': appendToDisplay('ln('); break;
+                case 'q': appendToDisplay('sqrt('); break;
+                case 'p': appendToDisplay('π'); break;
             }
         });
-
-                // Redirect to home page
-                function goHome() {
-                    window.location.href = "index.html"; // Change this if needed
-                }
     </script>
+        <footer style="
+        position: fixed; bottom: 0; left: 0; right: 0;
+        text-align: center; padding: 10px;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px; letter-spacing: 0.12em;
+        color: #3a3a48;
+        z-index: 5; pointer-events: none;
+    ">© 2026 WillSlowhike · All Rights Reserved</footer>
+</body>
 </body>
 </html>

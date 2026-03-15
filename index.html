@@ -3,61 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link Page</title>
+    <title>Calculator Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg:       #090d1a;
+            --surface:  #0e1525;
+            --panel:    #131d2e;
+            --border:   #1e2d45;
+            --border2:  #2a3f5f;
+            --text:     #e8edf5;
+            --sub:      #6a84a8;
+            --muted:    #2a3f5f;
+
+            /* Card accent colors matching each calculator */
+            --c-basic:    #39ff14;  /* neon green */
+            --c-multi:    #c9a84c;  /* warm gold */
+            --c-sci:      #6c63ff;  /* purple */
+            --c-graph:    #e63946;  /* red */
+            --c-finance:  #c9a84c;  /* gold */
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: var(--bg);
+            font-family: 'DM Mono', monospace;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ── Background layers ── */
+        .bg-layer {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        }
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(100,140,220,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100,140,220,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            animation: gridDrift 30s linear infinite;
+        }
+        @keyframes gridDrift {
+            from { background-position: 0 0; }
+            to   { background-position: 48px 48px; }
+        }
+        .bg-orbs {
+            background:
+                radial-gradient(ellipse 60% 40% at 15% 20%, rgba(108,99,255,0.10) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 35% at 85% 75%, rgba(57,255,20,0.06) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 30% at 60% 10%, rgba(201,168,76,0.07) 0%, transparent 50%);
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: relative; z-index: 10;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 48px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(9,13,26,0.8);
+            backdrop-filter: blur(12px);
+            animation: fadeDown 0.6s ease both;
+        }
+        @keyframes fadeDown {
+            from { opacity:0; transform: translateY(-12px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+        .nav-logo {
+            font-family: 'Fraunces', serif;
+            font-size: 20px; font-weight: 700;
+            color: var(--text); letter-spacing: -0.02em;
+        }
+        .nav-logo span { color: var(--sub); font-weight: 300; font-style: italic; }
+        .nav-tag {
+            font-size: 10px; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--sub);
+        }
+
+        /* ── Hero ── */
+        .hero {
+            position: relative; z-index: 5;
             text-align: center;
-            margin: 20px;
+            padding: 96px 24px 72px;
+            animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.1s both;
         }
-        .link-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        @keyframes fadeUp {
+            from { opacity:0; transform: translateY(24px); }
+            to   { opacity:1; transform: translateY(0); }
         }
-        .link-box {
-            margin: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            width: 300px;
-            text-align: center;
+        .hero-eyebrow {
+            display: inline-block;
+            font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+            color: var(--sub);
+            border: 1px solid var(--border2);
+            border-radius: 99px;
+            padding: 5px 16px;
+            margin-bottom: 28px;
         }
-        a {
+        .hero-title {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(48px, 7vw, 88px);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin-bottom: 24px;
+        }
+        .hero-title em {
+            font-style: italic;
+            font-weight: 300;
+            color: var(--sub);
+        }
+        .hero-sub {
+            font-size: 14px; color: var(--sub);
+            max-width: 420px; margin: 0 auto 48px;
+            line-height: 1.8; letter-spacing: 0.01em;
+        }
+        .hero-stats {
+            display: flex; justify-content: center; gap: 40px;
+            font-size: 11px; color: var(--sub);
+        }
+        .stat-val {
+            font-family: 'Fraunces', serif;
+            font-size: 28px; font-weight: 700;
+            color: var(--text); display: block;
+            letter-spacing: -0.02em;
+        }
+
+        /* ── Card grid ── */
+        .grid-section {
+            position: relative; z-index: 5;
+            max-width: 1100px; margin: 0 auto;
+            padding: 0 32px 96px;
+        }
+        .section-label {
+            font-size: 10px; letter-spacing: 0.16em;
+            text-transform: uppercase; color: var(--sub);
+            margin-bottom: 24px; padding-left: 2px;
+            border-left: 2px solid var(--border2);
+            padding-left: 12px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        /* ── Calculator card ── */
+        .calc-card {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px 24px 24px;
             text-decoration: none;
-            font-weight: bold;
-            color: #007BFF;
+            color: var(--text);
+            overflow: hidden;
+            transition: transform 0.2s cubic-bezier(0.22,1,0.36,1),
+                        border-color 0.2s, box-shadow 0.2s;
+            animation: cardIn 0.6s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        .calc-card:nth-child(1) { animation-delay: 0.15s; }
+        .calc-card:nth-child(2) { animation-delay: 0.22s; }
+        .calc-card:nth-child(3) { animation-delay: 0.29s; }
+        .calc-card:nth-child(4) { animation-delay: 0.36s; }
+        .calc-card:nth-child(5) { animation-delay: 0.43s; }
+        @keyframes cardIn {
+            from { opacity:0; transform: translateY(20px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        .calc-card::before {
+            content: '';
+            position: absolute; top:0; left:0; right:0; height:2px;
+            background: var(--accent);
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .calc-card::after {
+            content: '';
+            position: absolute; inset:0;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-glow) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .calc-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-border);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 0 1px var(--accent-border);
+        }
+        .calc-card:hover::before { opacity: 1; }
+        .calc-card:hover::after  { opacity: 1; }
+
+        /* Per-card accent vars */
+        .card-basic   { --accent: var(--c-basic);   --accent-border: rgba(57,255,20,0.35);   --accent-glow: rgba(57,255,20,0.06); }
+        .card-multi   { --accent: var(--c-multi);   --accent-border: rgba(201,168,76,0.35);  --accent-glow: rgba(201,168,76,0.07); }
+        .card-sci     { --accent: var(--c-sci);     --accent-border: rgba(108,99,255,0.35);  --accent-glow: rgba(108,99,255,0.08); }
+        .card-graph   { --accent: var(--c-graph);   --accent-border: rgba(230,57,70,0.35);   --accent-glow: rgba(230,57,70,0.06); }
+        .card-finance { --accent: var(--c-finance); --accent-border: rgba(201,168,76,0.35);  --accent-glow: rgba(201,168,76,0.07); }
+
+        /* Card content */
+        .card-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            margin-bottom: 18px;
+        }
+        .card-tag {
+            font-size: 9px; letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: block;
+        }
+        .card-title {
+            font-family: 'Fraunces', serif;
+            font-size: 22px; font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 10px;
+            line-height: 1.1;
+        }
+        .card-desc {
+            font-size: 11px; color: var(--sub);
+            line-height: 1.8; margin-bottom: 20px;
+        }
+        .card-features {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 20px;
+        }
+        .feature-pill {
+            font-size: 9px; letter-spacing: 0.06em;
+            color: var(--sub);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            padding: 3px 10px;
+        }
+        .card-cta {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 11px; color: var(--accent);
+            letter-spacing: 0.04em;
+        }
+        .cta-arrow {
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .calc-card:hover .cta-arrow { transform: translateX(4px); }
+
+        /* Wide card (spans 2 cols) */
+        .card-wide { grid-column: span 2; }
+        .card-wide .card-desc { max-width: 400px; }
+
+        /* ── Footer ── */
+        footer {
+            position: relative; z-index: 5;
+            text-align: center;
+            padding: 32px;
+            border-top: 1px solid var(--border);
+            font-size: 11px; color: var(--sub);
         }
     </style>
 </head>
 <body>
-    <h1>Calculator Compilation</h1>
-    
-    <div class="link-container">
-        <div class="link-box">
-            <a href="BasicCalculator.html">Basic Calculator</a>
-            <p>Basic 4 Function Calculator</p>
-        </div>
-        
-        <div class="link-box">
-            <a href="ScientificCalculator.html">Scientific Calculator</a>
-            <p>Multi-Function Calculator</p>
-        </div>
-        
-        <div class="link-box">
-            <a href="Example.html">Example 1</a>
-            <p>Example</p>
-        </div>
-        
-        <div class="link-box">
-            <a href="Example.html">Example 2</a>
-            <p>Example</p>
-        </div>
-        
-        <div class="link-box">
-            <a href="Example.html">Example 3</a>
-            <p>Example</p>
-        </div>
+
+<div class="bg-layer bg-grid"></div>
+<div class="bg-layer bg-orbs"></div>
+
+<!-- Nav -->
+<nav>
+    <div class="nav-logo">Simple <span>Calc Suite</span></div>
+    <div class="nav-tag">Calculator AIO</div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-eyebrow">All calculators · One place</div>
+    <h1 class="hero-title">Every tool<br><em>you need</em></h1>
+    <p class="hero-sub">A suite of purpose-built calculators — from basic arithmetic to financial analysis and graphing.</p>
+    <div class="hero-stats">
+        <div><span class="stat-val">5</span>Calculators</div>
+        <div><span class="stat-val">20+</span>Functions</div>
+        <div><span class="stat-val">33</span>Currencies</div>
     </div>
+</section>
+
+<!-- Cards -->
+<section class="grid-section">
+    <div class="section-label">Choose a calculator</div>
+    <div class="card-grid">
+
+        <!-- Basic -->
+        <a class="calc-card card-basic" href="BasicCalculator.html">
+            <div class="card-icon">🔢</div>
+            <span class="card-tag">Basic</span>
+            <div class="card-title">Basic Calculator</div>
+            <div class="card-desc">Fast, clean arithmetic for everyday calculations. No frills, just results.</div>
+            <div class="card-features">
+                <span class="feature-pill">Add · Sub · Mul · Div</span>
+                <span class="feature-pill">Keyboard support</span>
+                <span class="feature-pill">Expression history</span>
+            </div>
+            <div class="card-cta"><span>Open calculator</span><span class="cta-arrow">→</span></div>
+        </a>
+
+        <!-- Multi-Function -->
+        <a class="calc-card card-multi" href="Multi-FunctionCalculator.html">
+            <div class="card-icon">🖩</div>
+            <span class="card-tag">Multi-Function</span>
+            <div class="card-title">Desk Calculator</div>
+            <div class="card-desc">A full desktop-style calculator with memory registers and grand total tracking.</div>
+            <div class="card-features">
+                <span class="feature-pill">M+ · M− · MRC</span>
+                <span class="feature-pill">GT register</span>
+                <span class="feature-pill">Markup (MU)</span>
+                <span class="feature-pill">√ · %</span>
+            </div>
+            <div class="card-cta"><span>Open calculator</span><span class="cta-arrow">→</span></div>
+        </a>
+
+        <!-- Scientific -->
+        <a class="calc-card card-sci" href="ScientificCalculator.html">
+            <div class="card-icon">🧮</div>
+            <span class="card-tag">Scientific</span>
+            <div class="card-title">Scientific Calculator</div>
+            <div class="card-desc">Full scientific functions for engineering, physics, and advanced math.</div>
+            <div class="card-features">
+                <span class="feature-pill">sin · cos · tan</span>
+                <span class="feature-pill">log · ln</span>
+                <span class="feature-pill">π · e · √ · xʸ</span>
+                <span class="feature-pill">n!</span>
+            </div>
+            <div class="card-cta"><span>Open calculator</span><span class="cta-arrow">→</span></div>
+        </a>
+
+        <!-- Graphing (wide) -->
+        <a class="calc-card card-graph card-wide" href="GraphingCalculator.html">
+            <div class="card-icon">📈</div>
+            <span class="card-tag">Graphing</span>
+            <div class="card-title">Graphing Calculator</div>
+            <div class="card-desc">Plot multiple functions simultaneously with zoom, pan, and live curve tracing. Supports sin, cos, tan, log, ln, sqrt, and more.</div>
+            <div class="card-features">
+                <span class="feature-pill">Multi-function plot</span>
+                <span class="feature-pill">Zoom & pan</span>
+                <span class="feature-pill">Trace points</span>
+                <span class="feature-pill">Grid & axis labels</span>
+                <span class="feature-pill">Keyboard shortcuts</span>
+            </div>
+            <div class="card-cta"><span>Open calculator</span><span class="cta-arrow">→</span></div>
+        </a>
+
+        <!-- Financial -->
+        <a class="calc-card card-finance" href="FinancialCalculator.html">
+            <div class="card-icon">💰</div>
+            <span class="card-tag">Financial</span>
+            <div class="card-title">Financial Calculator</div>
+            <div class="card-desc">TVM, loans, compound interest, tip splitting, and live currency conversion across 33 currencies.</div>
+            <div class="card-features">
+                <span class="feature-pill">TVM · CPT</span>
+                <span class="feature-pill">Loan & Amortization</span>
+                <span class="feature-pill">Compound Interest</span>
+                <span class="feature-pill">Tip Split</span>
+                <span class="feature-pill">33 Currencies</span>
+            </div>
+            <div class="card-cta"><span>Open calculator</span><span class="cta-arrow">→</span></div>
+        </a>
+
+    </div>
+</section>
+
+<footer>
+    Simple Suite · Built for everyday and advanced use 
+</footer>
+
 </body>
 </html>

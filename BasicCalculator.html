@@ -3,152 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Calculator</title>
+    <title>Basic Calculator</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg:       #080810;
+            --surface:  #0f0f1a;
+            --panel:    #13131f;
+            --border:   #1e1e32;
+            --cyan:     #00f5ff;
+            --pink:     #ff2d78;
+            --yellow:   #ffe600;
+            --green:    #39ff14;
+            --text:     #e8e8ff;
+            --dim:      #4a4a6a;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
+            min-height: 100vh;
+            background: var(--bg);
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            margin: 0;
-            position: relative;
+            justify-content: center;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
         }
 
+        /* Animated grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes gridMove {
+            from { background-position: 0 0; }
+            to   { background-position: 40px 40px; }
+        }
+
+        /* Corner glow orbs */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 40% 30% at 10% 10%, rgba(255,45,120,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 90% 90%, rgba(0,245,255,0.10) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* Home button */
+        .home-button {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--cyan);
+            background: transparent;
+            border: 1px solid var(--cyan);
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 10px rgba(0,245,255,0.2), inset 0 0 10px rgba(0,245,255,0.05);
+            transition: box-shadow 0.2s, background 0.2s;
+            z-index: 10;
+        }
+        .home-button:hover {
+            background: rgba(0,245,255,0.08);
+            box-shadow: 0 0 20px rgba(0,245,255,0.4), inset 0 0 16px rgba(0,245,255,0.1);
+        }
+        .home-button svg { width: 12px; height: 12px; }
+
+        /* Calculator shell */
         .calculator {
-            width: 320px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            background-color: #f8f9fa;
-            text-align: center;
+            width: 340px;
+            background: var(--surface);
+            border: 1px solid #2a2a44;
+            border-radius: 6px;
+            padding: 24px 20px 20px;
+            position: relative;
+            box-shadow:
+                0 0 0 1px #1a1a30,
+                0 0 40px rgba(0,245,255,0.08),
+                0 0 80px rgba(255,45,120,0.06),
+                0 40px 80px rgba(0,0,0,0.8);
+            animation: bootUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
+        @keyframes bootUp {
+            from { opacity: 0; transform: scale(0.92) translateY(30px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Top accent bar */
+        .calculator::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--pink), var(--cyan), var(--yellow));
+            border-radius: 6px 6px 0 0;
+        }
+
+        /* Header */
+        .calc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .calc-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+        .status-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green), 0 0 12px var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
+        }
+
+        /* Display */
+        .display-wrap {
+            background: #000;
+            border: 1px solid #1a1a30;
+            border-radius: 4px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        /* CRT scanlines */
+        .display-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,245,255,0.015) 2px,
+                rgba(0,245,255,0.015) 4px
+            );
+            pointer-events: none;
+        }
+        .display-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: #2a4a4a;
+            min-height: 16px;
+            margin-bottom: 4px;
+            letter-spacing: 0.05em;
+        }
         #display {
-            width: 90%;
-            height: 60px;
-            font-size: 28px;
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'Orbitron', monospace;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--cyan);
             text-align: right;
-            margin-bottom: 10px;
-            padding-right: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            text-shadow: 0 0 10px rgba(0,245,255,0.6), 0 0 20px rgba(0,245,255,0.3);
+            letter-spacing: 0.02em;
+        }
+        #display::placeholder {
+            color: #0a3a3a;
+            text-shadow: none;
         }
 
+        /* Button grid */
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 9px;
         }
 
+        /* Base button */
         button {
-            width: 70px;
-            height: 70px;
-            font-size: 22px;
-            border: none;
-            border-radius: 5px;
-            background-color: #ddd;
+            height: 62px;
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid var(--border);
+            border-radius: 4px;
             cursor: pointer;
+            background: var(--panel);
+            color: var(--dim);
+            transition: all 0.12s;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.05em;
+            animation: btnIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
         }
 
-        button:hover {
-            background-color: #ccc;
+        /* Staggered button entrance */
+        button:nth-child(1)  { animation-delay: 0.05s; }
+        button:nth-child(2)  { animation-delay: 0.08s; }
+        button:nth-child(3)  { animation-delay: 0.11s; }
+        button:nth-child(4)  { animation-delay: 0.14s; }
+        button:nth-child(5)  { animation-delay: 0.17s; }
+        button:nth-child(6)  { animation-delay: 0.20s; }
+        button:nth-child(7)  { animation-delay: 0.23s; }
+        button:nth-child(8)  { animation-delay: 0.26s; }
+        button:nth-child(9)  { animation-delay: 0.29s; }
+        button:nth-child(10) { animation-delay: 0.32s; }
+        button:nth-child(11) { animation-delay: 0.35s; }
+        button:nth-child(12) { animation-delay: 0.38s; }
+        button:nth-child(13) { animation-delay: 0.41s; }
+        button:nth-child(14) { animation-delay: 0.44s; }
+        button:nth-child(15) { animation-delay: 0.47s; }
+        button:nth-child(16) { animation-delay: 0.50s; }
+        button:nth-child(17) { animation-delay: 0.53s; }
+        button:nth-child(18) { animation-delay: 0.56s; }
+
+        @keyframes btnIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        button:active {
-            background-color: #bbb;
+        button:active { transform: scale(0.93); }
+
+        /* Digit buttons — cyan glow */
+        button.digit {
+            color: var(--text);
+            border-color: #1e2a3a;
+        }
+        button.digit:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: rgba(0,245,255,0.05);
+            box-shadow: 0 0 12px rgba(0,245,255,0.2), inset 0 0 12px rgba(0,245,255,0.04);
         }
 
-        /* Home Button Styling */
-        .home-button {
+        /* Operator buttons — pink glow */
+        button.operator {
+            color: var(--pink);
+            border-color: #3a1a28;
+            background: rgba(255,45,120,0.05);
+        }
+        button.operator:hover {
+            border-color: var(--pink);
+            background: rgba(255,45,120,0.10);
+            box-shadow: 0 0 12px rgba(255,45,120,0.3), inset 0 0 12px rgba(255,45,120,0.06);
+        }
+
+        /* Clear — yellow glow */
+        button.clear {
+            color: var(--yellow);
+            border-color: #3a3a00;
+            background: rgba(255,230,0,0.04);
+            font-size: 12px;
+        }
+        button.clear:hover {
+            border-color: var(--yellow);
+            background: rgba(255,230,0,0.08);
+            box-shadow: 0 0 12px rgba(255,230,0,0.3), inset 0 0 12px rgba(255,230,0,0.05);
+        }
+
+        /* Equals — green glow, full fill */
+        button.equals {
+            color: #000;
+            background: var(--green);
+            border-color: var(--green);
+            font-size: 20px;
+            text-shadow: none;
+            box-shadow: 0 0 16px rgba(57,255,20,0.4);
+        }
+        button.equals:hover {
+            background: #50ff30;
+            box-shadow: 0 0 28px rgba(57,255,20,0.7);
+        }
+
+        /* Ripple flash on press */
+        button::after {
+            content: '';
             position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 10px 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.12) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.15s;
         }
-
-        .home-button:hover {
-            background-color: #0056b3;
-        }
+        button:active::after { opacity: 1; }
     </style>
 </head>
 <body>
-    <!-- Home Button Positioned at Top Left -->
-    <button class="home-button" onclick="goHome()">Home</button>
+
+    <a class="home-button" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        HOME
+    </a>
 
     <div class="calculator">
-        <input type="text" id="display" disabled />
+
+        <div class="calc-header">
+            <span class="calc-title">Basic Calc</span>
+            <div class="status-dot"></div>
+        </div>
+
+        <div class="display-wrap">
+            <div class="display-sub" id="expression">—</div>
+            <input type="text" id="display" placeholder="0" readonly>
+        </div>
+
         <div class="buttons">
-            <button onclick="clearDisplay()">C</button>
-            <button onclick="deleteLast()">DEL</button>
-            <button onclick="appendToDisplay('/')">/</button>
-            <button onclick="appendToDisplay('*')">*</button>
-            <button onclick="appendToDisplay('7')">7</button>
-            <button onclick="appendToDisplay('8')">8</button>
-            <button onclick="appendToDisplay('9')">9</button>
-            <button onclick="appendToDisplay('-')">-</button>
-            <button onclick="appendToDisplay('4')">4</button>
-            <button onclick="appendToDisplay('5')">5</button>
-            <button onclick="appendToDisplay('6')">6</button>
-            <button onclick="appendToDisplay('+')">+</button>
-            <button onclick="appendToDisplay('1')">1</button>
-            <button onclick="appendToDisplay('2')">2</button>
-            <button onclick="appendToDisplay('3')">3</button>
-            <button onclick="calculateResult()">=</button>
-            <button onclick="appendToDisplay('0')">0</button>
-            <button onclick="appendToDisplay('.')">.</button>
+            <button class="clear"    onclick="clearDisplay()">C</button>
+            <button class="clear"    onclick="deleteLast()">DEL</button>
+            <button class="operator" onclick="appendToDisplay('/')">÷</button>
+            <button class="operator" onclick="appendToDisplay('*')">×</button>
+
+            <button class="digit"    onclick="appendToDisplay('7')">7</button>
+            <button class="digit"    onclick="appendToDisplay('8')">8</button>
+            <button class="digit"    onclick="appendToDisplay('9')">9</button>
+            <button class="operator" onclick="appendToDisplay('-')">−</button>
+
+            <button class="digit"    onclick="appendToDisplay('4')">4</button>
+            <button class="digit"    onclick="appendToDisplay('5')">5</button>
+            <button class="digit"    onclick="appendToDisplay('6')">6</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+
+            <button class="digit"    onclick="appendToDisplay('1')">1</button>
+            <button class="digit"    onclick="appendToDisplay('2')">2</button>
+            <button class="digit"    onclick="appendToDisplay('3')">3</button>
+            <button class="equals"   onclick="calculateResult()">=</button>
+
+            <button class="digit"    onclick="appendToDisplay('0')">0</button>
+            <button class="digit"    onclick="appendToDisplay('.')">.</button>
         </div>
     </div>
 
     <script>
         function appendToDisplay(value) {
-            document.getElementById('display').value += value;
+            const d = document.getElementById('display');
+            d.value += value;
+            document.getElementById('expression').textContent = d.value || '—';
         }
 
         function clearDisplay() {
             document.getElementById('display').value = '';
+            document.getElementById('expression').textContent = '—';
         }
 
         function deleteLast() {
-            let display = document.getElementById('display');
-            display.value = display.value.slice(0, -1);
+            const d = document.getElementById('display');
+            d.value = d.value.slice(0, -1);
+            document.getElementById('expression').textContent = d.value || '—';
         }
 
         function calculateResult() {
-            let display = document.getElementById('display');
+            const d = document.getElementById('display');
+            const raw = d.value;
+            if (!raw) return;
             try {
-                display.value = eval(display.value);
+                const result = eval(raw);
+                document.getElementById('expression').textContent = raw + ' =';
+                d.value = parseFloat(result.toPrecision(12)).toString();
             } catch {
-                display.value = 'Error';
+                document.getElementById('expression').textContent = 'ERROR';
+                d.value = '';
             }
         }
 
-        // Keyboard event listener
-        document.addEventListener('keydown', function(event) {
-            const key = event.key;
-
-            if (!isNaN(key) || "+-*/.".includes(key)) {
-                appendToDisplay(key);
-            } else if (key === 'Enter') {
-                calculateResult();
-            } else if (key === 'Backspace') {
-                deleteLast();
-            } else if (key === 'Escape') {
-                clearDisplay();
-            }
+        document.addEventListener('keydown', function(e) {
+            const key = e.key;
+            if (!isNaN(key) || '+-*/.'.includes(key)) { appendToDisplay(key); }
+            else if (key === 'Enter')     { calculateResult(); }
+            else if (key === 'Backspace') { deleteLast(); }
+            else if (key === 'Escape')    { clearDisplay(); }
         });
 
-        // Redirect to home page
-        function goHome() {
-            window.location.href = "index.html"; // Change this if needed
-        }
+        function goHome() { window.location.href = 'index.html'; }
     </script>
+        <footer style="
+        position: fixed; bottom: 0; left: 0; right: 0;
+        text-align: center; padding: 10px;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 10px; letter-spacing: 0.12em;
+        color: #2a2a4a;
+        z-index: 5; pointer-events: none;
+    ">© 2026 WillSlowhike · All Rights Reserved</footer>
 </body>
 </html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Function Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:         #f5f0e8;
+            --bg2:        #ede7d9;
+            --surface:    #faf7f2;
+            --border:     #d9d0c0;
+            --border-dark:#b8aa94;
+            --text:       #1a1612;
+            --subtext:    #7a6e60;
+            --accent:     #c0392b;
+            --accent-dim: #f9e9e7;
+            --amber:      #d97706;
+            --amber-dim:  #fef3c7;
+            --slate:      #3d5a6e;
+            --slate-dim:  #e4edf3;
+            --shadow-sm:  0 1px 3px rgba(60,40,10,0.10), 0 1px 2px rgba(60,40,10,0.08);
+            --shadow-md:  0 4px 12px rgba(60,40,10,0.12), 0 2px 4px rgba(60,40,10,0.08);
+            --shadow-btn: 0 2px 0 rgba(60,40,10,0.18);
+            --shadow-btn-press: 0 0px 0 rgba(60,40,10,0.18);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c4b89a' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* Home button */
+        .home-button {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 18px;
+            font-family: 'Lora', serif;
+            font-size: 13px;
+            font-style: italic;
+            color: var(--subtext);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            text-decoration: none;
+            transition: color 0.2s, box-shadow 0.2s, transform 0.1s;
+        }
+        .home-button:hover { color: var(--text); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        .home-button svg { width: 13px; height: 13px; }
+
+        /* Shell */
+        .calculator {
+            width: 400px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.8) inset,
+                var(--shadow-md),
+                0 20px 48px rgba(60,40,10,0.14);
+            animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(24px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Header */
+        .calc-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .calc-title {
+            font-family: 'Lora', serif;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+        .calc-subtitle {
+            font-family: 'Lora', serif;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--subtext);
+        }
+
+        /* Display */
+        .display-wrap {
+            background: #d8e8d0;
+            border: 1px solid #a8c09a;
+            border-radius: 8px;
+            padding: 12px 16px 14px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 6px rgba(0,60,0,0.10);
+            position: relative;
+        }
+        .display-indicators {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .indicator {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 500;
+            color: #4a7a3a;
+            opacity: 0.3;
+            letter-spacing: 0.04em;
+            transition: opacity 0.2s;
+        }
+        .indicator.active { opacity: 1; }
+        #display {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 34px;
+            font-weight: 300;
+            color: #1a3a14;
+            text-align: right;
+            letter-spacing: -0.02em;
+        }
+        #display::placeholder { color: #8ab880; }
+
+        /* Label */
+        .label {
+            font-family: 'Lora', serif;
+            font-size: 10px;
+            font-style: italic;
+            color: var(--subtext);
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+            padding-left: 2px;
+        }
+
+        /* Grids */
+        .grid-top  { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 6px; }
+        .grid-mem  { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 6px; }
+        .grid-main { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+
+        .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+        /* Base button */
+        button {
+            height: 50px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            font-weight: 400;
+            border: 1px solid var(--border);
+            border-bottom: 2px solid var(--border-dark);
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--surface);
+            color: var(--subtext);
+            transition: background 0.12s, color 0.12s, transform 0.08s, box-shadow 0.08s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-btn);
+        }
+        button:hover { background: var(--bg2); color: var(--text); }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: var(--shadow-btn-press);
+            border-bottom-width: 1px;
+        }
+
+        /* Memory row */
+        button.memory {
+            font-size: 12px;
+            color: var(--slate);
+            background: var(--slate-dim);
+            border-color: #b8cdd9;
+            border-bottom-color: #93b3c5;
+        }
+        button.memory:hover { background: #d0e2ec; }
+
+        /* Top utility row */
+        button.utility {
+            font-size: 12px;
+            color: var(--subtext);
+            background: var(--bg2);
+            border-color: var(--border);
+            border-bottom-color: var(--border-dark);
+        }
+        button.utility:hover { background: #e0d8c8; color: var(--text); }
+
+        /* Digit */
+        button.digit { color: var(--text); font-size: 18px; font-weight: 500; }
+
+        /* Operator */
+        button.operator {
+            color: var(--amber);
+            background: var(--amber-dim);
+            border-color: #e5c87a;
+            border-bottom-color: #c9a64a;
+            font-size: 18px;
+        }
+        button.operator:hover { background: #fde9a0; }
+
+        /* Equals */
+        button.equals {
+            background: var(--accent);
+            border-color: #9b2c2c;
+            border-bottom-color: #7b1d1d;
+            color: #fff;
+            font-family: 'Lora', serif;
+            font-size: 20px;
+            font-weight: 600;
+            grid-row: span 2;
+            height: auto;
+        }
+        button.equals:hover { background: #c53030; }
+
+        /* Clear / AC */
+        button.clear {
+            background: var(--accent-dim);
+            border-color: #e8b5b0;
+            border-bottom-color: #d08078;
+            color: var(--accent);
+            font-family: 'Lora', serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+        button.clear:hover { background: #f5d0cb; }
+
+        button.zero { grid-column: span 2; font-size: 18px; }
+
+        button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.06) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        button:active::after { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <a class="home-button" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Home
+    </a>
+
+    <div class="calculator">
+
+        <div class="calc-header">
+            <span class="calc-title">Multi-Function</span>
+            <span class="calc-subtitle">Calculator</span>
+        </div>
+
+        <!-- Display -->
+        <div class="display-wrap">
+            <div class="display-indicators">
+                <span class="indicator" id="ind-gt">GT</span>
+                <span class="indicator" id="ind-m">M</span>
+            </div>
+            <input type="text" id="display" placeholder="0" readonly>
+        </div>
+
+        <!-- Top row: OFF, MU, GT, ON/C·CE, AC -->
+        <div class="label">Utility</div>
+        <div class="grid-top">
+            <button class="utility" onclick="turnOff()">OFF</button>
+            <button class="utility" onclick="markupCalc()">MU</button>
+            <button class="utility" onclick="recallGT()">GT</button>
+            <button class="utility" onclick="clearEntry()">C/CE</button>
+            <button class="clear"   onclick="clearAll()">AC</button>
+        </div>
+
+        <!-- Memory row: MRC, M−, M+, →, ± -->
+        <div class="label" style="margin-top:8px;">Memory</div>
+        <div class="grid-mem">
+            <button class="memory" onclick="memRecallClear()">MRC</button>
+            <button class="memory" onclick="memMinus()">M−</button>
+            <button class="memory" onclick="memPlus()">M+</button>
+            <button class="utility" onclick="toggleSign()">±</button>
+                        <button class="utility" onclick="input('%')">%</button>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Main numpad -->
+        <div class="grid-main">
+            <!-- Row 1 -->
+            <button class="digit" onclick="input('7')">7</button>
+            <button class="digit" onclick="input('8')">8</button>
+            <button class="digit" onclick="input('9')">9</button>
+            <button class="operator" onclick="input('+')">+</button>
+            <button class="utility" onclick="input('Math.sqrt(')">√</button>
+
+            <!-- Row 2 -->
+            <button class="digit" onclick="input('4')">4</button>
+            <button class="digit" onclick="input('5')">5</button>
+            <button class="digit" onclick="input('6')">6</button>
+            <button class="operator" onclick="input('×')">×</button>
+            <button class="operator" onclick="input('÷')">÷</button>
+
+            <!-- Row 3 -->
+            <button class="digit" onclick="input('1')">1</button>
+            <button class="digit" onclick="input('2')">2</button>
+            <button class="digit" onclick="input('3')">3</button>
+            <button class="operator" onclick="input('−')">−</button>
+            <button class="equals" onclick="calculate()">=</button>
+
+            <!-- Row 4 -->
+            <button class="digit zero" onclick="input('0')">0</button>
+            <button class="digit" onclick="input('.')">.</button>
+        </div>
+
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────────
+        let memory   = 0;
+        let gtTotal  = 0;
+        let mrcCount = 0;          // first press = recall, second = clear
+        let currentInput = '';
+        let operator = '';
+        let prevValue = null;
+        let justCalculated = false;
+
+        const display    = () => document.getElementById('display');
+        const indGT      = () => document.getElementById('ind-gt');
+        const indM       = () => document.getElementById('ind-m');
+
+        function setDisplay(val) {
+            display().value = val;
+        }
+
+        function getDisplay() {
+            return display().value;
+        }
+
+        // ── Input ──────────────────────────────────────────────────────────
+        function input(val) {
+            if (justCalculated && /[0-9.]/.test(val)) {
+                setDisplay('');
+                justCalculated = false;
+            }
+            if (val === '00') {
+                if (!getDisplay() || getDisplay() === '0') return;
+                setDisplay(getDisplay() + '00');
+                return;
+            }
+            if (val === '.' && getDisplay().includes('.')) return;
+            setDisplay(getDisplay() + val);
+        }
+
+        // ── Operators (symbolic, evaluated on =) ──────────────────────────
+        // We build a simple expression string and eval it.
+        // Display holds the running expression.
+
+        function calculate() {
+            const raw = getDisplay();
+            if (!raw) return;
+            try {
+                let expr = raw;
+                expr = expr.replace(/×/g, '*');
+                expr = expr.replace(/÷/g, '/');
+                expr = expr.replace(/−/g, '-');
+                expr = expr.replace(/%/g, '/100');
+                // Handle sqrt( — user must have typed a number after it
+                // e.g. "Math.sqrt(9)" — already valid JS if they used the button
+                const result = eval(expr);
+                const rounded = parseFloat(result.toPrecision(12));
+                gtTotal += rounded;
+                indGT().classList.add('active');
+                setDisplay(rounded.toString());
+                justCalculated = true;
+            } catch (e) {
+                setDisplay('Error');
+                justCalculated = true;
+            }
+        }
+
+        // ── Clear ──────────────────────────────────────────────────────────
+        function clearEntry() {
+            // First press clears last entry, second clears all
+            const d = getDisplay();
+            if (d && d !== '0' && d !== 'Error') {
+                // Remove last number segment
+                setDisplay(d.replace(/[\d.]+$/, '') || '');
+            } else {
+                clearAll();
+            }
+        }
+
+        function clearAll() {
+            setDisplay('');
+            justCalculated = false;
+        }
+
+        function turnOff() {
+            setDisplay('');
+            gtTotal = 0;
+            memory  = 0;
+            mrcCount = 0;
+            justCalculated = false;
+            indGT().classList.remove('active');
+            indM().classList.remove('active');
+        }
+
+        // ── Backspace ──────────────────────────────────────────────────────
+        function backspace() {
+            setDisplay(getDisplay().slice(0, -1));
+        }
+
+        // ── Sign toggle ────────────────────────────────────────────────────
+        function toggleSign() {
+            const d = getDisplay();
+            if (!d || d === '0') return;
+            setDisplay(d.startsWith('-') ? d.slice(1) : '-' + d);
+        }
+
+        // ── GT (Grand Total) ──────────────────────────────────────────────
+        function recallGT() {
+            setDisplay(parseFloat(gtTotal.toPrecision(12)).toString());
+            justCalculated = true;
+        }
+
+        // ── Memory ────────────────────────────────────────────────────────
+        function memPlus() {
+            const val = parseFloat(getDisplay());
+            if (isNaN(val)) return;
+            memory += val;
+            indM().classList.add('active');
+            mrcCount = 0;
+        }
+
+        function memMinus() {
+            const val = parseFloat(getDisplay());
+            if (isNaN(val)) return;
+            memory -= val;
+            indM().classList.toggle('active', memory !== 0);
+            mrcCount = 0;
+        }
+
+        function memRecallClear() {
+            mrcCount++;
+            if (mrcCount === 1) {
+                // Recall
+                setDisplay(parseFloat(memory.toPrecision(12)).toString());
+                justCalculated = true;
+            } else {
+                // Clear memory
+                memory = 0;
+                mrcCount = 0;
+                indM().classList.remove('active');
+            }
+        }
+
+        // ── Markup (MU): cost + margin% → selling price ───────────────────
+        // Usage: type cost, press ×, type margin%, press MU
+        // Simple implementation: treat current display as margin %, use last
+        // calculated result as cost.
+        function markupCalc() {
+            const d = getDisplay();
+            const val = parseFloat(d);
+            if (isNaN(val)) return;
+            // If we have a prior result, compute markup
+            // MU on a single number: show as-is (no prior context)
+            // Standard desk-calc MU: result / (1 - rate/100)
+            // We'll treat current value as the gross margin %
+            // and the GT running total as cost — but simpler:
+            // just note: type selling price, press MU → shows profit margin %
+            // OR: type cost, ×, margin%, MU → selling price
+            // We implement: display / (1 - display/100) style is ambiguous.
+            // Simple safe version: if display looks like a %, compute markup price
+            // from last GT entry.
+            if (gtTotal && val < 100) {
+                const price = gtTotal / (1 - val / 100);
+                setDisplay(parseFloat(price.toPrecision(12)).toString());
+            } else {
+                // fallback: show margin on current value vs memory
+                const margin = ((val - memory) / val * 100);
+                setDisplay(parseFloat(margin.toPrecision(6)).toString() + '%');
+            }
+            justCalculated = true;
+        }
+
+        // ── Keyboard ──────────────────────────────────────────────────────
+        document.addEventListener('keydown', function(e) {
+            const key = e.key;
+            if (/^[0-9.]$/.test(key))        { input(key); return; }
+            if (key === '+')                  { input('+'); return; }
+            if (key === '-')                  { input('−'); return; }
+            if (key === '*')                  { input('×'); return; }
+            if (key === '/')                  { e.preventDefault(); input('÷'); return; }
+            if (key === '%')                  { input('%'); return; }
+            if (key === 'Enter' || key === '=') { calculate(); return; }
+            if (key === 'Backspace')          { backspace(); return; }
+            if (key === 'Escape')             { clearAll(); return; }
+            if (key === 'Delete')             { clearEntry(); return; }
+        });
+
+        function goHome() { window.location.href = 'index.html'; }
+    </script>
+        <footer style="
+        position: fixed; bottom: 0; left: 0; right: 0;
+        text-align: center; padding: 10px;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px; letter-spacing: 0.12em;
+        color: #3a3a48;
+        z-index: 5; pointer-events: none;
+    ">© 2026 WillSlowhike · All Rights Reserved</footer>
+</body>
+</body>
+</html>

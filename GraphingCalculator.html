@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphing Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:       #f2efe8;
+            --surface:  #faf9f6;
+            --ink:      #0e0e0e;
+            --mid:      #888880;
+            --border:   #d4d0c8;
+            --c0: #e63946; --c1: #2563eb; --c2: #16a34a; --c3: #d97706;
+            --c4: #7c3aed; --c5: #0891b2;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            height: 100vh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+        }
+
+        /* ── Top bar ── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 52px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 20px; }
+        .home-button {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            color: var(--mid);
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer; text-decoration: none;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .home-button:hover { color: var(--ink); border-color: var(--ink); }
+        .home-button svg { width: 11px; height: 11px; }
+        .app-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 18px;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+        .app-title span { color: var(--mid); font-size: 13px; font-family: 'JetBrains Mono', monospace; margin-left: 8px; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .btn-small {
+            padding: 5px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--mid);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-small:hover { color: var(--ink); border-color: var(--ink); background: rgba(0,0,0,0.03); }
+        .btn-small.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+        .btn-small.primary:hover { background: #333; }
+
+        /* ── Main layout ── */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 280px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .sidebar-section {
+            padding: 16px 16px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-label {
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--mid);
+            margin-bottom: 10px;
+        }
+
+        /* Function rows */
+        .fn-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            animation: slideIn 0.3s ease both;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .fn-swatch {
+            width: 12px; height: 32px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .fn-input-wrap { flex: 1; position: relative; }
+        .fn-label {
+            position: absolute;
+            left: 10px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: var(--mid);
+            pointer-events: none;
+            font-style: italic;
+            white-space: nowrap;
+        }
+        .fn-input {
+            width: 100%;
+            padding: 7px 8px 7px 72px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--ink);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .fn-input:focus { border-color: var(--ink); }
+        .fn-remove {
+            width: 24px; height: 24px;
+            border: none; background: transparent;
+            color: var(--mid); cursor: pointer;
+            font-size: 16px; line-height: 1;
+            border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.15s, background 0.15s;
+            flex-shrink: 0;
+        }
+        .fn-remove:hover { color: #e63946; background: rgba(230,57,70,0.08); }
+        .add-fn-btn {
+            width: 100%;
+            padding: 7px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--mid);
+            background: transparent;
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 2px;
+        }
+        .add-fn-btn:hover { color: var(--ink); border-color: var(--ink); background: rgba(0,0,0,0.02); }
+
+        /* View controls */
+        .view-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .view-field label {
+            display: block;
+            font-size: 10px; color: var(--mid);
+            margin-bottom: 4px; letter-spacing: 0.04em;
+        }
+        .view-field input {
+            width: 100%;
+            padding: 6px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--ink);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            outline: none;
+        }
+        .view-field input:focus { border-color: var(--ink); }
+
+        /* Trace info */
+        .trace-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 11px;
+            color: var(--mid);
+            min-height: 52px;
+        }
+        .trace-box .trace-val {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink);
+            margin-top: 4px;
+        }
+        .trace-box .trace-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* Keyboard shortcuts */
+        .shortcuts { padding: 14px 16px; }
+        .shortcut-row {
+            display: flex; justify-content: space-between;
+            font-size: 10px; color: var(--mid);
+            margin-bottom: 5px;
+        }
+        .shortcut-row kbd {
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 3px; padding: 1px 5px; font-family: inherit;
+        }
+
+        /* ── Canvas area ── */
+        .graph-wrap {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: var(--surface);
+        }
+        canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+        }
+
+        /* Trace crosshair tooltip */
+        .trace-tooltip {
+            position: absolute;
+            background: var(--ink);
+            color: var(--bg);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            pointer-events: none;
+            white-space: nowrap;
+            display: none;
+            transform: translate(10px, -50%);
+            z-index: 10;
+        }
+
+        /* Zoom badge */
+        .zoom-badge {
+            position: absolute;
+            bottom: 16px; right: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 5px 12px;
+            font-size: 11px;
+            color: var(--mid);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+    <div class="topbar-left">
+        <a class="home-button" href="index.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Home
+        </a>
+        <span class="app-title">Graphing Calculator <span>f(x)</span></span>
+    </div>
+    <div class="topbar-right">
+        <button class="btn-small" onclick="resetView()">Reset View</button>
+        <button class="btn-small primary" onclick="plotAll()">Plot</button>
+    </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+        <!-- Functions -->
+        <div class="sidebar-section">
+            <div class="section-label">Functions</div>
+            <div id="fn-list"></div>
+            <button class="add-fn-btn" onclick="addFunction()">+ Add function</button>
+        </div>
+
+        <!-- View window -->
+        <div class="sidebar-section">
+            <div class="section-label">View Window</div>
+            <div class="view-grid">
+                <div class="view-field">
+                    <label>X min</label>
+                    <input type="number" id="xmin" value="-10" onchange="plotAll()">
+                </div>
+                <div class="view-field">
+                    <label>X max</label>
+                    <input type="number" id="xmax" value="10" onchange="plotAll()">
+                </div>
+                <div class="view-field">
+                    <label>Y min</label>
+                    <input type="number" id="ymin" value="-10" onchange="plotAll()">
+                </div>
+                <div class="view-field">
+                    <label>Y max</label>
+                    <input type="number" id="ymax" value="10" onchange="plotAll()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Trace -->
+        <div class="sidebar-section">
+            <div class="section-label">Trace</div>
+            <div class="trace-box" id="trace-box">
+                <span>Hover over the graph to trace</span>
+            </div>
+        </div>
+
+        <!-- Shortcuts -->
+        <div class="shortcuts">
+            <div class="section-label">Shortcuts</div>
+            <div class="shortcut-row"><span>Zoom in</span><kbd>Scroll ↑</kbd></div>
+            <div class="shortcut-row"><span>Zoom out</span><kbd>Scroll ↓</kbd></div>
+            <div class="shortcut-row"><span>Pan</span><kbd>Click + Drag</kbd></div>
+            <div class="shortcut-row"><span>Reset view</span><kbd>R</kbd></div>
+            <div class="shortcut-row"><span>Plot</span><kbd>Enter</kbd></div>
+        </div>
+
+    </div>
+
+    <!-- Graph canvas -->
+    <div class="graph-wrap" id="graph-wrap">
+        <canvas id="graph"></canvas>
+        <div class="trace-tooltip" id="trace-tooltip"></div>
+        <div class="zoom-badge" id="zoom-badge">100%</div>
+    </div>
+
+</div>
+
+<script>
+// ── Colors ──────────────────────────────────────────────────────────────────
+const COLORS = ['#e63946','#2563eb','#16a34a','#d97706','#7c3aed','#0891b2'];
+
+// ── State ────────────────────────────────────────────────────────────────────
+let functions = [];
+let fnCount   = 0;
+
+let viewXMin = -10, viewXMax = 10, viewYMin = -10, viewYMax = 10;
+
+// Pan/drag
+let dragging = false, dragStartX = 0, dragStartY = 0;
+let dragXMin, dragXMax, dragYMin, dragYMax;
+
+const canvas  = document.getElementById('graph');
+const ctx     = canvas.getContext('2d');
+const wrap    = document.getElementById('graph-wrap');
+const tooltip = document.getElementById('trace-tooltip');
+const badge   = document.getElementById('zoom-badge');
+
+// ── Resize ───────────────────────────────────────────────────────────────────
+function resize() {
+    canvas.width  = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    plotAll();
+}
+window.addEventListener('resize', resize);
+
+// ── Coordinate helpers ────────────────────────────────────────────────────────
+function toCanvasX(x) { return (x - viewXMin) / (viewXMax - viewXMin) * canvas.width; }
+function toCanvasY(y) { return canvas.height - (y - viewYMin) / (viewYMax - viewYMin) * canvas.height; }
+function toWorldX(px) { return viewXMin + px / canvas.width * (viewXMax - viewXMin); }
+function toWorldY(py) { return viewYMin + (canvas.height - py) / canvas.height * (viewYMax - viewYMin); }
+
+// ── Draw ──────────────────────────────────────────────────────────────────────
+function plotAll() {
+    // Sync view inputs
+    viewXMin = parseFloat(document.getElementById('xmin').value) || -10;
+    viewXMax = parseFloat(document.getElementById('xmax').value) ||  10;
+    viewYMin = parseFloat(document.getElementById('ymin').value) || -10;
+    viewYMax = parseFloat(document.getElementById('ymax').value) ||  10;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    drawAxes();
+    functions.forEach(fn => drawFunction(fn));
+    updateZoomBadge();
+}
+
+function drawGrid() {
+    ctx.save();
+    // Minor grid
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 1;
+    const step = niceStep(viewXMax - viewXMin);
+    for (let x = Math.ceil(viewXMin / step) * step; x <= viewXMax; x += step) {
+        const cx = toCanvasX(x);
+        ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height); ctx.stroke();
+    }
+    for (let y = Math.ceil(viewYMin / step) * step; y <= viewYMax; y += step) {
+        const cy = toCanvasY(y);
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy); ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawAxes() {
+    ctx.save();
+    const step = niceStep(viewXMax - viewXMin);
+
+    // Axes lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 1.5;
+    const cx0 = toCanvasX(0), cy0 = toCanvasY(0);
+
+    // X axis
+    ctx.beginPath(); ctx.moveTo(0, cy0); ctx.lineTo(canvas.width, cy0); ctx.stroke();
+    // Y axis
+    ctx.beginPath(); ctx.moveTo(cx0, 0); ctx.lineTo(cx0, canvas.height); ctx.stroke();
+
+    // Tick marks & labels
+    ctx.fillStyle = '#555';
+    ctx.font = '10px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+
+    for (let x = Math.ceil(viewXMin / step) * step; x <= viewXMax; x += step) {
+        if (Math.abs(x) < step * 0.01) continue;
+        const cx = toCanvasX(x);
+        ctx.beginPath(); ctx.moveTo(cx, cy0 - 4); ctx.lineTo(cx, cy0 + 4); ctx.stroke();
+        const label = +x.toPrecision(4);
+        ctx.fillText(label, cx, Math.min(Math.max(cy0 + 14, 14), canvas.height - 4));
+    }
+    ctx.textAlign = 'right';
+    for (let y = Math.ceil(viewYMin / step) * step; y <= viewYMax; y += step) {
+        if (Math.abs(y) < step * 0.01) continue;
+        const cy = toCanvasY(y);
+        ctx.beginPath(); ctx.moveTo(cx0 - 4, cy); ctx.lineTo(cx0 + 4, cy); ctx.stroke();
+        const label = +y.toPrecision(4);
+        ctx.fillText(label, Math.min(Math.max(cx0 - 6, 28), canvas.width - 4), cy + 3.5);
+    }
+    // Origin label
+    ctx.fillStyle = '#999';
+    ctx.textAlign = 'right';
+    ctx.fillText('0', Math.min(cx0 - 6, canvas.width - 10), cy0 + 14);
+
+    ctx.restore();
+}
+
+function drawFunction(fn) {
+    if (!fn.expr || !fn.active) return;
+    let f;
+    try {
+        f = buildFn(fn.expr);
+        f(0); // test call
+    } catch(e) { return; }
+
+    ctx.save();
+    ctx.strokeStyle = fn.color;
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = fn.color;
+    ctx.shadowBlur = 3;
+
+    const steps = canvas.width * 2;
+    let started = false;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+        const wx = viewXMin + (i / steps) * (viewXMax - viewXMin);
+        let wy;
+        try { wy = f(wx); } catch(e) { started = false; continue; }
+        if (!isFinite(wy) || isNaN(wy)) { started = false; continue; }
+        const cx = toCanvasX(wx), cy = toCanvasY(wy);
+        if (!started) { ctx.moveTo(cx, cy); started = true; }
+        else ctx.lineTo(cx, cy);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+// ── Function builder ──────────────────────────────────────────────────────────
+function buildFn(expr) {
+    let e = expr.trim();
+    // Strip y= or f(x)= prefix
+    e = e.replace(/^(y\s*=\s*|f\(x\)\s*=\s*)/i, '');
+    // Math replacements
+    e = e.replace(/\^/g, '**');
+    e = e.replace(/(\d)(x)/g, '$1*x');
+    e = e.replace(/(x)(\d)/g, '$1*$2');
+    e = e.replace(/\bsin\b/g, 'Math.sin');
+    e = e.replace(/\bcos\b/g, 'Math.cos');
+    e = e.replace(/\btan\b/g, 'Math.tan');
+    e = e.replace(/\bsqrt\b/g, 'Math.sqrt');
+    e = e.replace(/\babs\b/g, 'Math.abs');
+    e = e.replace(/\blog\b/g, 'Math.log10');
+    e = e.replace(/\bln\b/g, 'Math.log');
+    e = e.replace(/\bpi\b/g, 'Math.PI');
+    e = e.replace(/\be\b(?!\d)/g, 'Math.E');
+    return new Function('x', `"use strict"; return (${e});`);
+}
+
+// ── Nice step size ────────────────────────────────────────────────────────────
+function niceStep(range) {
+    const raw = range / 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    if (norm < 1.5) return mag;
+    if (norm < 3.5) return 2 * mag;
+    if (norm < 7.5) return 5 * mag;
+    return 10 * mag;
+}
+
+// ── Zoom badge ────────────────────────────────────────────────────────────────
+function updateZoomBadge() {
+    const defaultRange = 20;
+    const currentRange = viewXMax - viewXMin;
+    const pct = Math.round(defaultRange / currentRange * 100);
+    badge.textContent = pct + '%';
+}
+
+// ── Zoom (scroll) ─────────────────────────────────────────────────────────────
+wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mx = toWorldX(e.clientX - rect.left);
+    const my = toWorldY(e.clientY - rect.top);
+    const factor = e.deltaY > 0 ? 1.12 : 0.88;
+    viewXMin = mx + (viewXMin - mx) * factor;
+    viewXMax = mx + (viewXMax - mx) * factor;
+    viewYMin = my + (viewYMin - my) * factor;
+    viewYMax = my + (viewYMax - my) * factor;
+    syncViewInputs();
+    plotAll();
+}, { passive: false });
+
+// ── Pan ───────────────────────────────────────────────────────────────────────
+wrap.addEventListener('mousedown', e => {
+    dragging = true;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    dragXMin = viewXMin; dragXMax = viewXMax;
+    dragYMin = viewYMin; dragYMax = viewYMax;
+    wrap.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', e => {
+    if (dragging) {
+        const dx = (e.clientX - dragStartX) / canvas.width  * (dragXMax - dragXMin);
+        const dy = (e.clientY - dragStartY) / canvas.height * (dragYMax - dragYMin);
+        viewXMin = dragXMin - dx; viewXMax = dragXMax - dx;
+        viewYMin = dragYMin + dy; viewYMax = dragYMax + dy;
+        syncViewInputs();
+        plotAll();
+    }
+    // Trace
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    if (mx >= 0 && mx <= canvas.width && my >= 0 && my <= canvas.height) {
+        tracePoint(mx, my, e.clientX, e.clientY);
+    } else {
+        tooltip.style.display = 'none';
+    }
+});
+window.addEventListener('mouseup', () => {
+    dragging = false;
+    wrap.style.cursor = 'crosshair';
+});
+wrap.style.cursor = 'crosshair';
+
+// ── Trace ─────────────────────────────────────────────────────────────────────
+function tracePoint(px, py, clientX, clientY) {
+    const wx = toWorldX(px);
+    const active = functions.filter(f => f.expr && f.active);
+    if (!active.length) { tooltip.style.display = 'none'; updateTraceBox(); return; }
+
+    // Find closest function at this x
+    let best = null, bestDist = Infinity;
+    active.forEach(fn => {
+        let f;
+        try { f = buildFn(fn.expr); } catch(e) { return; }
+        let wy;
+        try { wy = f(wx); } catch(e) { return; }
+        if (!isFinite(wy)) return;
+        const cy = toCanvasY(wy);
+        const dist = Math.abs(cy - py);
+        if (dist < bestDist) { bestDist = dist; best = { fn, wy }; }
+    });
+
+    if (!best || bestDist > 60) {
+        tooltip.style.display = 'none';
+        updateTraceBox(null);
+        return;
+    }
+
+    // Draw crosshair dot
+    plotAll();
+    const cx = toCanvasX(wx), cy = toCanvasY(best.wy);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = best.fn.color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Crosshair lines
+    ctx.strokeStyle = best.fn.color + '55';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy); ctx.stroke();
+    ctx.restore();
+
+    // Tooltip
+    const xStr = (+wx.toPrecision(5)).toString();
+    const yStr = (+best.wy.toPrecision(5)).toString();
+    tooltip.textContent = `x = ${xStr}   y = ${yStr}`;
+    tooltip.style.display = 'block';
+    const tr = wrap.getBoundingClientRect();
+    let tx = clientX - tr.left + 14;
+    let ty = clientY - tr.top;
+    if (tx + 180 > wrap.clientWidth) tx = clientX - tr.left - 180;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top  = ty + 'px';
+
+    updateTraceBox({ fn: best.fn, x: wx, y: best.wy });
+}
+
+function updateTraceBox(data) {
+    const box = document.getElementById('trace-box');
+    if (!data) {
+        box.innerHTML = '<span>Hover over the graph to trace</span>';
+        return;
+    }
+    const xStr = (+data.x.toPrecision(6)).toString();
+    const yStr = (+data.y.toPrecision(6)).toString();
+    box.innerHTML = `
+        <span><span class="trace-dot" style="background:${data.fn.color}"></span>${data.fn.expr}</span>
+        <div class="trace-val">x = ${xStr}<br>y = ${yStr}</div>
+    `;
+}
+
+// ── Sync view inputs ──────────────────────────────────────────────────────────
+function syncViewInputs() {
+    document.getElementById('xmin').value = +viewXMin.toPrecision(4);
+    document.getElementById('xmax').value = +viewXMax.toPrecision(4);
+    document.getElementById('ymin').value = +viewYMin.toPrecision(4);
+    document.getElementById('ymax').value = +viewYMax.toPrecision(4);
+}
+
+// ── Reset view ────────────────────────────────────────────────────────────────
+function resetView() {
+    viewXMin = -10; viewXMax = 10; viewYMin = -10; viewYMax = 10;
+    syncViewInputs();
+    plotAll();
+}
+
+// ── Function management ───────────────────────────────────────────────────────
+const PLACEHOLDERS = ['sin(x)', 'x^2', 'cos(x)', 'x^3 - 3x', 'sqrt(x)', 'ln(x)'];
+
+function addFunction(expr) {
+    const id = fnCount++;
+    const color = COLORS[functions.length % COLORS.length];
+    const fn = { id, expr: expr || '', color, active: true };
+    functions.push(fn);
+    renderFnList();
+    if (expr) plotAll();
+    // Focus new input
+    setTimeout(() => {
+        const el = document.getElementById('fn-input-' + id);
+        if (el) el.focus();
+    }, 50);
+}
+
+function removeFunction(id) {
+    functions = functions.filter(f => f.id !== id);
+    renderFnList();
+    plotAll();
+}
+
+function renderFnList() {
+    const list = document.getElementById('fn-list');
+    list.innerHTML = '';
+    functions.forEach((fn, i) => {
+        const row = document.createElement('div');
+        row.className = 'fn-row';
+        row.innerHTML = `
+            <div class="fn-swatch" style="background:${fn.color}"></div>
+            <div class="fn-input-wrap">
+                <span class="fn-label">f${i+1}(x) =</span>
+                <input class="fn-input" id="fn-input-${fn.id}"
+                    value="${fn.expr}"
+                    placeholder="${PLACEHOLDERS[i % PLACEHOLDERS.length]}"
+                    oninput="updateFnExpr(${fn.id}, this.value)"
+                    onkeydown="if(event.key==='Enter') plotAll()">
+            </div>
+            <button class="fn-remove" onclick="removeFunction(${fn.id})" title="Remove">×</button>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function updateFnExpr(id, val) {
+    const fn = functions.find(f => f.id === id);
+    if (fn) fn.expr = val;
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'r' || e.key === 'R') resetView();
+    if (e.key === 'Enter') plotAll();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+addFunction('sin(x)');
+addFunction('x^2 / 4');
+resize();
+</script>
+    <footer style="
+        position: fixed; bottom: 0; left: 0; right: 0;
+        text-align: center; padding: 10px;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px; letter-spacing: 0.12em;
+        color: #3a3a48;
+        z-index: 5; pointer-events: none;
+    ">© 2026 WillSlowhike · All Rights Reserved</footer>
+</body>
+</body>
+</html>
