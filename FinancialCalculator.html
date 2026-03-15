@@ -660,8 +660,15 @@ function setTip(pct) {
 }
 
 // ── CURRENCY ──────────────────────────────────────────────────────────────────
-const SYMBOLS = { USD:'$',EUR:'€',GBP:'£',JPY:'¥',CAD:'CA$',AUD:'A$',CHF:'Fr',CNY:'¥',INR:'₹',MXN:'$',KRW:'₩',SGD:'S$' };
-
+const SYMBOLS = {
+    AED:'د.إ', AUD:'A$',  BGN:'лв',  BRL:'R$',  CAD:'CA$',
+    CHF:'Fr',  CNY:'¥',   CZK:'Kč',  DKK:'kr',  EUR:'€',
+    GBP:'£',   HKD:'HK$', HUF:'Ft',  IDR:'Rp',  ILS:'₪',
+    INR:'₹',   ISK:'kr',  JPY:'¥',   KRW:'₩',   MXN:'$',
+    MYR:'RM',  NOK:'kr',  NZD:'NZ$', PHP:'₱',   PLN:'zł',
+    RON:'lei', SEK:'kr',  SGD:'S$',  THB:'฿',   TRY:'₺',
+    TWD:'NT$', USD:'$',   ZAR:'R'
+};
 // Live rates fetched from Frankfurter (ECB data, updated daily, no key needed)
 let liveRates = null;   // rates relative to EUR base
 let ratesDate = '';
