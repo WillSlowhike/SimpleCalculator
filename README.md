@@ -22,26 +22,6 @@ Calculator Suite is a client-side web application built with vanilla HTML, CSS, 
 
 ---
 
-## Screenshots
-
-> Add screenshots of each calculator here.
-
-```
-/screenshots/
-  basic.png
-  desk.png
-  scientific.png
-  graphing.png
-  financial.png
-```
-
-To add a screenshot inline:
-```md
-![Basic Calculator](screenshots/basic.png)
-```
-
----
-
 ## How to Use
 
 No installation required.
