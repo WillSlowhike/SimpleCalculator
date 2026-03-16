@@ -26,17 +26,8 @@ Calculator Suite is a client-side web application built with vanilla HTML, CSS, 
 
 No installation required.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/WillSlowhike/calculator-suite.git
-   ```
-
-2. Open `index.html` in any modern browser:
-   ```bash
-   open index.html
-   ```
-
-3. Navigate to any calculator from the landing page.
+1. Click the GitHub Pages link
+2. Navigate to any calculator from the landing page.
 
 All files are self-contained. No server, no build step, no internet connection required — except the Financial Calculator's currency converter, which fetches live rates from the [Frankfurter API](https://www.frankfurter.app/) (European Central Bank data, free, no key needed). A fallback with reference rates is used if the fetch fails.
 
@@ -64,8 +55,8 @@ calculator-suite/
 ├── ScientificCalculator.html     # Scientific calculator
 ├── GraphingCalculator.html       # Graphing calculator
 ├── FinancialCalculator.html      # Financial calculator
-├── README.md
-└── screenshots/                  # (add your own)
+└──README.md
+ 
 ```
 
 ---
